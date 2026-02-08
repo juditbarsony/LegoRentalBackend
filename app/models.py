@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+﻿#from __future__ import annotations
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import datetime
@@ -15,7 +15,8 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
 
-    # Relationships
+    # A List["LegoSet"] helyett csak a típust adjuk meg, 
+    # az SQLModel tudni fogja, hogy ez egy lista a Relationship miatt
     lego_sets: List["LegoSet"] = Relationship(back_populates="owner")
     rentals: List["Rental"] = Relationship(back_populates="renter")
 
@@ -36,7 +37,6 @@ class LegoSet(LegoSetBase, table=True):
     owner_id: int = Field(foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Relationships
     owner: Optional["User"] = Relationship(back_populates="lego_sets")
     rentals: List["Rental"] = Relationship(back_populates="lego_set")
 
@@ -54,11 +54,10 @@ class Rental(RentalBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
 
-    # Relationships
     lego_set: Optional["LegoSet"] = Relationship(back_populates="rentals")
     renter: Optional["User"] = Relationship(back_populates="rentals")
 
-# --- REBRICKABLE MODELS (Placeholders based on your previous code) ---
+# --- REBRICKABLE MODELS ---
 
 class RebrickableTheme(SQLModel, table=True):
     __tablename__ = "rebrickable_themes"
