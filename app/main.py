@@ -1,6 +1,7 @@
 ﻿from fastapi import FastAPI
 from app.database import create_db_and_tables
 from app.routers import auth
+from app.routers import sets  # ÚJ
 
 app = FastAPI(title="LEGO Rental Backend")
 
@@ -9,7 +10,7 @@ def on_startup():
     create_db_and_tables()
 
 app.include_router(auth.router)
-
+app.include_router(sets.router)
 
 
 @app.get("/health")
