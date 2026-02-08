@@ -1,4 +1,4 @@
-﻿# app/routers/sets.py
+﻿
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
@@ -7,6 +7,9 @@ from app.database import get_session
 from app.models import LegoSet, RebrickableSet, User
 from app.schemas import LegoSetCreate, LegoSetRead
 from app.routers.auth import get_current_user
+
+from app.schemas import AvailabilityCreate, AvailabilityRead
+from app.models import Availability
 
 
 router = APIRouter(
@@ -91,6 +94,53 @@ def create_lego_set(
             if db_lego_set.missing_items_raw
             else None
         ),
+    )
+
+def add_availability_period(
+    set_id: int,
+    period: AvailabilityCreate,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    lego_set = db.get(LegoSet, set_id)
+    if not lego_set:
+        raise HTTPException(status_code=404, detail="Lego set not found.")
+
+    # csak a tulaj módosíthatja
+    if lego_set.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not the owner of this set.")
+
+    if period.end_date < period.start_date:
+        raise HTTPException(status_code=400, detail="end_date must be >= start_date.")
+
+    # (opcionális) ütközés ellenőrzés más availability-vel
+    stmt = select(Availability).where(
+        Availability.lego_set_id == set_id,
+        Availability.start_date <= period.end_date,
+        Availability.end_date >= period.start_date,
+    )
+    conflict = db.exec(stmt).first()
+    if conflict:
+        raise HTTPException(
+            status_code=400,
+            detail="Availability period overlaps with an existing one.",
+        )
+
+    availability = Availability(
+        lego_set_id=set_id,
+        start_date=period.start_date,
+        end_date=period.end_date,
+    )
+
+    db.add(availability)
+    db.commit()
+    db.refresh(availability)
+
+    return AvailabilityRead(
+        id=availability.id,
+        lego_set_id=availability.lego_set_id,
+        start_date=availability.start_date,
+        end_date=availability.end_date,
     )
 
 @router.get("/", response_model=List[LegoSetRead])

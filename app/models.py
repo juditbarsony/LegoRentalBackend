@@ -2,6 +2,8 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import datetime
+from datetime import date
+from app.enums import LegoSetState
 
 
 # --- USER MODELS ---
@@ -38,20 +40,22 @@ class LegoSet(LegoSetBase, table=True):
     owner_id: int = Field(foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # ÚJ: number_of_items (Rebrickable num_parts-ból)
+    #number_of_items (Rebrickable num_parts-ból)
     number_of_items: Optional[int] = Field(default=None)
 
-    # ÚJ: missing_items lista – legegyszerűbb stringként tárolni pl. "3001,3002,3003"
+    # missing_items lista – legegyszerűbb stringként tárolni pl. "3001,3002,3003"
     missing_items_raw: Optional[str] = Field(default=None)
 
-    # ÚJ: state, notes, deposit, scan_required, public, rental_price
-    state: Optional[str] = Field(default=None)  # "NEW"/"USED"/"TRASH"
+    # state, notes, deposit, scan_required, public, rental_price
+    state: LegoSetState | None = Field(default=None)  # "NEW"/"USED"/"TRASH"
     notes: Optional[str] = Field(default=None)
 
     rental_price: float = Field(default=0.0)
     deposit: float = Field(default=0.0)
     scan_required: bool = Field(default=False)
     public: bool = Field(default=True)
+
+    availabilities: List["Availability"] = Relationship(back_populates="lego_set")
 
     owner: Optional["User"] = Relationship(back_populates="lego_sets")
     rentals: List["Rental"] = Relationship(back_populates="lego_set")
@@ -89,3 +93,15 @@ class RebrickableSet(SQLModel, table=True):
     theme_id: int = Field(foreign_key="rebrickable_themes.id")
     num_parts: int
     img_url: Optional[str] = None
+
+    # --- Availability ---
+    
+class Availability(SQLModel, table=True):
+    __tablename__ = "availabilities"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lego_set_id: int = Field(foreign_key="lego_sets.id", index=True)
+    start_date: date
+    end_date: date
+
+    lego_set: Optional["LegoSet"] = Relationship(back_populates="availabilities")

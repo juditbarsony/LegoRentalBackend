@@ -2,7 +2,9 @@
 from typing import Optional, List
 from app.models import UserBase
 from datetime import datetime
+from datetime import date
 from sqlmodel import SQLModel, Field
+from app.enums import LegoSetState
 
 # We can inherit from UserBase to avoid duplication
 class UserCreate(UserBase):
@@ -34,7 +36,7 @@ class LegoSetBase(SQLModel):
     deposit: float = 0.0
     scan_required: bool = False
 
-    state: Optional[str] = Field(default=None)  # "NEW" / "USED" / "TRASH"
+    state: LegoSetState | None = None  # "NEW" / "USED" / "TRASH"
     missing_items: Optional[List[str]] = None   # part number lista
     notes: Optional[str] = None
 
@@ -52,3 +54,14 @@ class LegoSetRead(LegoSetBase):
     owner_id: int
     created_at: datetime
     number_of_items: Optional[int] = None
+    
+class AvailabilityBase(SQLModel):
+    start_date: date
+    end_date: date
+
+class AvailabilityCreate(AvailabilityBase):
+    pass
+
+class AvailabilityRead(AvailabilityBase):
+    id: int
+    lego_set_id: int
