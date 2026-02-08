@@ -1,55 +1,76 @@
 ﻿from __future__ import annotations
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
 from typing import Optional, List
 from datetime import datetime
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.ext.declarative import declarative_base
-from app.database import Base
 
-# RebrickableSet és RebrickableTheme változatlan...
+# --- USER MODELS ---
 
-class User(Base):
+class UserBase(SQLModel):
+    email: str = Field(unique=True, index=True)
+    full_name: str
+    role: str = Field(default="USER")
+
+class User(UserBase, table=True):
     __tablename__ = "users"
-    
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    email: Mapped[str] = mapped_column(String, unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(String)
-    full_name: Mapped[str] = mapped_column(String)
-    role: Mapped[str] = mapped_column(String, default="USER")
+    id: Optional[int] = Field(default=None, primary_key=True)
+    hashed_password: str
 
-    # Javított kapcsolat
-    sets: Mapped[List["LegoSet"]] = relationship(back_populates="owner")
+    # Relationships
+    lego_sets: List["LegoSet"] = Relationship(back_populates="owner")
+    rentals: List["Rental"] = Relationship(back_populates="renter")
 
-class LegoSet(SQLModel, table=True):
+# --- LEGO MODELS ---
+
+class LegoSetBase(SQLModel):
+    set_num: str = Field(foreign_key="rebrickable_sets.set_num")
+    title: str
+    description: Optional[str] = None
+    rental_price_per_day: float
+    condition: str
+    location: str
+    available: bool = Field(default=True)
+
+class LegoSet(LegoSetBase, table=True):
     __tablename__ = "lego_sets"
-    
-    id: Mapped[Optional[int]] = mapped_column(primary_key=True)
-    set_num: Mapped[str] = mapped_column(ForeignKey("rebrickable_sets.set_num"))
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    title: Mapped[str]
-    description: Mapped[Optional[str]]
-    rental_price_per_day: Mapped[float]
-    condition: Mapped[str]
-    location: Mapped[str]
-    available: Mapped[bool] = Field(default=True)
-    created_at: Mapped[datetime] = Field(default_factory=datetime.utcnow)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    owner_id: int = Field(foreign_key="users.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Javított kapcsolatok
-    owner: Mapped["User"] = relationship(back_populates="sets")
-    rentals: Mapped[List["Rental"]] = relationship(back_populates="lego_set")
+    # Relationships
+    owner: Optional["User"] = Relationship(back_populates="lego_sets")
+    rentals: List["Rental"] = Relationship(back_populates="lego_set")
 
-class Rental(SQLModel, table=True):
-    __tablename__ = "rentals"
-    id: Mapped[Optional[int]] = mapped_column(primary_key=True)
-    lego_set_id: Mapped[int] = mapped_column(ForeignKey("lego_sets.id"))
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+# --- RENTAL MODELS ---
+
+class RentalBase(SQLModel):
+    lego_set_id: int = Field(foreign_key="lego_sets.id")
     start_date: datetime
-    end_date: Optional[datetime]
+    end_date: Optional[datetime] = None
     total_price: float
     status: str = Field(default="ACTIVE")
-    
-    lego_set: Mapped["LegoSet"] = relationship(back_populates="rentals")
-    renter: Mapped["User"] = relationship(back_populates="rentals")
+
+class Rental(RentalBase, table=True):
+    __tablename__ = "rentals"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+
+    # Relationships
+    lego_set: Optional["LegoSet"] = Relationship(back_populates="rentals")
+    renter: Optional["User"] = Relationship(back_populates="rentals")
+
+# --- REBRICKABLE MODELS (Placeholders based on your previous code) ---
+
+class RebrickableTheme(SQLModel, table=True):
+    __tablename__ = "rebrickable_themes"
+    id: int = Field(primary_key=True)
+    name: str
+    parent_id: Optional[int] = Field(default=None, foreign_key="rebrickable_themes.id")
+
+class RebrickableSet(SQLModel, table=True):
+    __tablename__ = "rebrickable_sets"
+    set_num: str = Field(primary_key=True)
+    name: str
+    year: int
+    theme_id: int = Field(foreign_key="rebrickable_themes.id")
+    num_parts: int
+    img_url: Optional[str] = None

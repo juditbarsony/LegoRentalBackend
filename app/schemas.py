@@ -1,21 +1,21 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from app.models import UserBase
 
-class UserCreate(BaseModel):
-    email: EmailStr
+# We can inherit from UserBase to avoid duplication
+class UserCreate(UserBase):
     password: str
-    full_name: str
 
-class UserOut(BaseModel):
+class UserOut(UserBase):
     id: int
-    email: EmailStr
-    full_name: str
-    role: str
 
     class Config:
         from_attributes = True
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
 
+class TokenData(BaseModel):
+    email: Optional[str] = None
+    role: Optional[str] = None
