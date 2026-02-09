@@ -1,9 +1,9 @@
 ﻿#from __future__ import annotations
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
-from datetime import datetime
-from datetime import date
-from app.enums import LegoSetState
+from datetime import datetime, date
+from app.enums import LegoSetState, RentalStatus
+
 
 
 # --- USER MODELS ---
@@ -74,10 +74,19 @@ class RentalBase(SQLModel):
     total_price: float
     status: str = Field(default="REQUESTED")
 
-class Rental(RentalBase, table=True):
+class Rental(SQLModel, table=True):
     __tablename__ = "rentals"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id")
+    lego_set_id: int = Field(foreign_key="lego_sets.id", index=True)
+    renter_id: int = Field(foreign_key="users.id", index=True)  # user_id → renter_id (tisztább név)
+    
+    start_date: date
+    end_date: date
+    total_price: float
+    status: RentalStatus = Field(default=RentalStatus.REQUESTED)
+    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     lego_set: Optional["LegoSet"] = Relationship(back_populates="rentals")
     renter: Optional["User"] = Relationship(back_populates="rentals")

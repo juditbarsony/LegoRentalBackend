@@ -1,10 +1,10 @@
 ﻿from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from app.models import UserBase
-from datetime import datetime
-from datetime import date
+from datetime import date, datetime
 from sqlmodel import SQLModel, Field
 from app.enums import LegoSetState
+from app.enums import RentalStatus
 
 
 
@@ -75,3 +75,19 @@ class AvailabilityCreate(AvailabilityBase):
 class AvailabilityRead(AvailabilityBase):
     id: int
     lego_set_id: int
+    
+class RentalBase(SQLModel):
+    lego_set_id: int
+    start_date: date
+    end_date: date
+
+class RentalCreate(RentalBase):
+    pass
+
+class RentalRead(RentalBase):
+    id: int
+    renter_id: int
+    total_price: float
+    status: RentalStatus
+    created_at: datetime
+    updated_at: datetime
