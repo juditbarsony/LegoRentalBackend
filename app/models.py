@@ -28,37 +28,42 @@ class User(UserBase, table=True):
 class LegoSetBase(SQLModel):
     set_num: str = Field(foreign_key="rebrickable_sets.set_num")
     title: str
-    description: Optional[str] = None
-    rental_price_per_day: float
-    condition: str
     location: str
-    available: bool = Field(default=True)
+    rental_price: float = 0.0
+    deposit: float = 0.0
+    scan_required: bool = False
+    state: Optional[str] = None
+    notes: Optional[str] = None
+    public: bool = True
 
-class LegoSet(LegoSetBase, table=True):
+class LegoSet(SQLModel, table=True):
     __tablename__ = "lego_sets"
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="users.id")
+    owner_id: int = Field(foreign_key="users.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    #number_of_items (Rebrickable num_parts-ból)
-    number_of_items: Optional[int] = Field(default=None)
+    # Rebrickable kapcsolat
+    set_num: str = Field(foreign_key="rebrickable_sets.set_num", index=True)
+    title: str
 
-    # missing_items lista – legegyszerűbb stringként tárolni pl. "3001,3002,3003"
-    missing_items_raw: Optional[str] = Field(default=None)
-
-    # state, notes, deposit, scan_required, public, rental_price
-    state: LegoSetState | None = Field(default=None)  # "NEW"/"USED"/"TRASH"
-    notes: Optional[str] = Field(default=None)
-
+    # Wireframe mezők
+    location: str = Field(index=True)
     rental_price: float = Field(default=0.0)
     deposit: float = Field(default=0.0)
     scan_required: bool = Field(default=False)
+    
+    state: Optional[str] = Field(default=None)  # "NEW" / "USED" / "TRASH"
+    notes: Optional[str] = Field(default=None)
     public: bool = Field(default=True)
 
-    availabilities: List["Availability"] = Relationship(back_populates="lego_set")
+    number_of_items: Optional[int] = Field(default=None)
+    missing_items_raw: Optional[str] = Field(default=None)
 
+    # Relationships
     owner: Optional["User"] = Relationship(back_populates="lego_sets")
     rentals: List["Rental"] = Relationship(back_populates="lego_set")
+    availabilities: List["Availability"] = Relationship(back_populates="lego_set")
 
 # --- RENTAL MODELS ---
 

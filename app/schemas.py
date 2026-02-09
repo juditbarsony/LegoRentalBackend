@@ -6,6 +6,8 @@ from datetime import date
 from sqlmodel import SQLModel, Field
 from app.enums import LegoSetState
 
+
+
 # We can inherit from UserBase to avoid duplication
 class UserCreate(UserBase):
     password: str
@@ -48,6 +50,14 @@ class LegoSetCreate(LegoSetBase):
     A backend fogja beolvasni a RebrickableSet-et set_num alapján,
     és abból származtatjuk number_of_items-et.
     """
+class LegoSetUpdate(SQLModel):
+    rental_price: Optional[float] = None
+    deposit: Optional[float] = None
+    scan_required: Optional[bool] = None
+    state: Optional[LegoSetState] = None  # vagy Optional[str]
+    notes: Optional[str] = None
+    public: Optional[bool] = None
+
 
 class LegoSetRead(LegoSetBase):
     id: int

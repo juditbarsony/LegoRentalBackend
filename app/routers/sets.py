@@ -3,13 +3,16 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+
 from app.database import get_session
-from app.models import LegoSet, RebrickableSet, User
-from app.schemas import LegoSetCreate, LegoSetRead
+from app.models import LegoSet, RebrickableSet, User, Rental
+from app.schemas import LegoSetCreate, LegoSetRead, LegoSetUpdate
 from app.routers.auth import get_current_user
 
 from app.schemas import AvailabilityCreate, AvailabilityRead
 from app.models import Availability
+
+from fastapi import Query
 
 
 router = APIRouter(
@@ -214,3 +217,132 @@ def get_lego_set(
         ),
     )
 
+@router.put("/{set_id}", response_model=LegoSetRead)
+def update_lego_set(
+    set_id: int,
+    updates: LegoSetUpdate,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    lego_set = db.get(LegoSet, set_id)
+    if not lego_set:
+        raise HTTPException(status_code=404, detail="Lego set not found.")
+
+    if lego_set.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not the owner of this set.")
+
+    update_data = updates.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(lego_set, field, value)
+
+    db.add(lego_set)
+    db.commit()
+    db.refresh(lego_set)
+
+    # itt használd a már meglévő LegoSetRead-be csomagoló logikádat
+    return LegoSetRead(
+        id=lego_set.id,
+        owner_id=lego_set.owner_id,
+        created_at=lego_set.created_at,
+        set_num=lego_set.set_num,
+        title=lego_set.title,
+        location=lego_set.location,
+        rental_price=lego_set.rental_price,
+        deposit=lego_set.deposit,
+        scan_required=lego_set.scan_required,
+        state=lego_set.state,
+        notes=lego_set.notes,
+        public=lego_set.public,
+        number_of_items=lego_set.number_of_items,
+        missing_items=(
+            lego_set.missing_items_raw.split(",")
+            if getattr(lego_set, "missing_items_raw", None)
+            else None
+        ),
+    )
+
+@router.delete("/{set_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_lego_set(
+    set_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    lego_set = db.get(LegoSet, set_id)
+    if not lego_set:
+        raise HTTPException(status_code=404, detail="Lego set not found.")
+
+    is_owner = lego_set.owner_id == current_user.id
+    is_admin = current_user.role == "ADMIN"
+
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Not allowed to delete this set.")
+
+    # aktív rental ellenőrzés – igazítsd a status értékekhez, ha már enum
+    active_statuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS", "RETURN_PENDING", "ACTIVE"]
+    statement = select(Rental).where(
+        Rental.lego_set_id == set_id,
+        Rental.status.in_(active_statuses),
+    )
+    active_rental = db.exec(statement).first()
+    if active_rental:
+        raise HTTPException(
+            status_code=400,
+            detail="Set has active rentals; cannot delete.",
+        )
+
+    db.delete(lego_set)
+    db.commit()
+    return
+@router.get("/", response_model=List[LegoSetRead])
+def list_lego_sets(
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    keyword: str | None = None,
+    location: str | None = None,
+    state: str | None = None,      # vagy LegoSetState | None
+    public: bool = True,           # default: csak publikus
+    limit: int = Query(default=20, le=100),
+    offset: int = 0,
+):
+    statement = select(LegoSet)
+
+    if public:
+        statement = statement.where(LegoSet.public == True)  # noqa: E712
+
+    if location:
+        statement = statement.where(LegoSet.location == location)
+
+    if state:
+        statement = statement.where(LegoSet.state == state)
+
+    if keyword:
+        like = f"%{keyword}%"
+        statement = statement.where(LegoSet.title.ilike(like))
+
+    statement = statement.offset(offset).limit(limit)
+
+    results = db.exec(statement).all()
+
+    response: List[LegoSetRead] = []
+    for s in results:
+        response.append(
+            LegoSetRead(
+                id=s.id,
+                owner_id=s.owner_id,
+                created_at=s.created_at,
+                set_num=s.set_num,
+                title=s.title,
+                location=s.location,
+                rental_price=s.rental_price,
+                deposit=s.deposit,
+                scan_required=s.scan_required,
+                state=s.state,
+                notes=s.notes,
+                public=s.public,
+                number_of_items=s.number_of_items,
+                missing_items=(
+                    s.missing_items_raw.split(",") if s.missing_items_raw else None
+                ),
+            )
+        )
+    return response
