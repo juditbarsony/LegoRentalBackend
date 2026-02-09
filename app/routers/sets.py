@@ -3,6 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+from datetime import date
 
 from app.database import get_session
 from app.models import LegoSet, RebrickableSet, User, Rental
@@ -149,22 +150,83 @@ def add_availability_period(
 @router.get("/", response_model=List[LegoSetRead])
 def list_lego_sets(
     db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),  # ha publikus böngészés is lesz, ezt később lazíthatjuk
+    current_user: User = Depends(get_current_user),
+    keyword: str | None = None,
+    set_num: str | None = None,
     location: str | None = None,
-    title: str | None = None,
+    state: str | None = None,
+    theme_id: int | None = None,
+    public: bool = True,
+    available_from: date | None = None,
+    available_to: date | None = None,
+    limit: int = Query(default=20, le=100),
+    offset: int = 0,
 ):
+    """
+    Listázza a LEGO seteket szűrőkkel:
+    - keyword: title-ben keres (case-insensitive LIKE)
+    - set_num: pontos Rebrickable set_num
+    - location: pontos város
+    - state: NEW/USED/TRASH
+    - theme_id: Rebrickable theme_id (kategória)
+    - public: csak publikus setek (default: True)
+    - available_from / available_to: csak azok a setek, amiknek van availability ebben az időszakban
+    - limit / offset: pagináció
+    """
+    from app.models import RebrickableSet, Availability
+
     statement = select(LegoSet)
 
+    # Public filter
+    if public:
+        statement = statement.where(LegoSet.public == True)  # noqa: E712
+
+    # Set_num pontos keresés
+    if set_num:
+        statement = statement.where(LegoSet.set_num == set_num)
+
+    # Location
     if location:
         statement = statement.where(LegoSet.location == location)
-    if title:
-        statement = statement.where(LegoSet.title.ilike(f"%{title}%"))
+
+    # State
+    if state:
+        statement = statement.where(LegoSet.state == state)
+
+    # Keyword (title LIKE)
+    if keyword:
+        like = f"%{keyword}%"
+        statement = statement.where(LegoSet.title.ilike(like))
+
+    # Theme_id – join RebrickableSet
+    if theme_id is not None:
+        statement = statement.join(
+            RebrickableSet, LegoSet.set_num == RebrickableSet.set_num
+        ).where(RebrickableSet.theme_id == theme_id)
+
+    # Availability időszak szerinti szűrés
+    if available_from and available_to:
+        # csak azok a setek, amiknek van legalább egy availability intervalluma,
+        # ami lefedi (vagy átfed) a kért időszakot
+        subq = (
+            select(Availability.lego_set_id)
+            .where(
+                Availability.start_date <= available_to,
+                Availability.end_date >= available_from,
+            )
+            .distinct()
+        )
+        statement = statement.where(LegoSet.id.in_(subq))
+
+    # Pagináció
+    statement = statement.offset(offset).limit(limit)
 
     results = db.exec(statement).all()
 
-    lego_sets_read: List[LegoSetRead] = []
+    # Response build
+    response: List[LegoSetRead] = []
     for s in results:
-        lego_sets_read.append(
+        response.append(
             LegoSetRead(
                 id=s.id,
                 owner_id=s.owner_id,
@@ -184,7 +246,7 @@ def list_lego_sets(
                 ),
             )
         )
-    return lego_sets_read
+    return response
 
 @router.get("/{set_id}", response_model=LegoSetRead)
 def get_lego_set(
@@ -293,34 +355,84 @@ def delete_lego_set(
     db.delete(lego_set)
     db.commit()
     return
+
 @router.get("/", response_model=List[LegoSetRead])
 def list_lego_sets(
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
     keyword: str | None = None,
+    set_num: str | None = None,
     location: str | None = None,
-    state: str | None = None,      # vagy LegoSetState | None
-    public: bool = True,           # default: csak publikus
+    state: str | None = None,  # fizikai állapot (opcionális)
+    theme_id: int | None = None,
+    public: bool = True,
+    available_from: date | None = None,
+    available_to: date | None = None,
+    include_unavailable: bool = False,  # ÚJ: foglaltak is?
     limit: int = Query(default=20, le=100),
     offset: int = 0,
 ):
+    from app.models import RebrickableSet, Availability, Rental
+
     statement = select(LegoSet)
 
     if public:
         statement = statement.where(LegoSet.public == True)  # noqa: E712
 
+    if set_num:
+        statement = statement.where(LegoSet.set_num == set_num)
     if location:
         statement = statement.where(LegoSet.location == location)
-
     if state:
         statement = statement.where(LegoSet.state == state)
-
     if keyword:
-        like = f"%{keyword}%"
-        statement = statement.where(LegoSet.title.ilike(like))
+        statement = statement.where(LegoSet.title.ilike(f"%{keyword}%"))
+    if theme_id is not None:
+        statement = statement.join(
+            RebrickableSet, LegoSet.set_num == RebrickableSet.set_num
+        ).where(RebrickableSet.theme_id == theme_id)
+
+    # Availability szűrés
+    if available_from and available_to:
+        # Van Availability erre az időszakra
+        avail_subq = (
+            select(Availability.lego_set_id)
+            .where(
+                Availability.start_date <= available_to,
+                Availability.end_date >= available_from,
+            )
+            .distinct()
+        )
+        statement = statement.where(LegoSet.id.in_(avail_subq))
+
+        # Nincs ütköző aktív Rental
+        if not include_unavailable:
+            active_statuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS", "RETURN_PENDING"]
+            rental_conflict_subq = (
+                select(Rental.lego_set_id)
+                .where(
+                    Rental.status.in_(active_statuses),
+                    Rental.start_date <= available_to,
+                    Rental.end_date >= available_from,
+                )
+                .distinct()
+            )
+            statement = statement.where(~LegoSet.id.in_(rental_conflict_subq))
+
+    elif not include_unavailable:
+        # Ha nincs időszak megadva, default: csak azokat, amiknek van availability és nincs aktív rental
+        has_availability_subq = select(Availability.lego_set_id).distinct()
+        statement = statement.where(LegoSet.id.in_(has_availability_subq))
+
+        active_statuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS", "RETURN_PENDING"]
+        active_rental_subq = (
+            select(Rental.lego_set_id)
+            .where(Rental.status.in_(active_statuses))
+            .distinct()
+        )
+        statement = statement.where(~LegoSet.id.in_(active_rental_subq))
 
     statement = statement.offset(offset).limit(limit)
-
     results = db.exec(statement).all()
 
     response: List[LegoSetRead] = []
