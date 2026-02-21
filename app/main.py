@@ -4,8 +4,20 @@ from app.routers import auth
 from app.routers import sets
 from app.routers import rentals
 
+from fastapi.middleware.cors import CORSMiddleware
+
+
+
 
 app = FastAPI(title="LEGO Rental Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # fejlesztéshez így a legegyszerűbb
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def on_startup():
