@@ -6,6 +6,7 @@ from app.enums import LegoSetState, RentalStatus
 
 
 
+
 # --- USER MODELS ---
 
 class UserBase(SQLModel):
@@ -47,7 +48,8 @@ class LegoSet(SQLModel, table=True):
     # Rebrickable kapcsolat
     set_num: str = Field(foreign_key="rebrickable_sets.set_num", index=True)
     title: str
-    image_url = Column(String, nullable=True)
+    img_url: Optional[str] = Field(default=None)
+
 
     # Wireframe mezők
     location: str = Field(index=True)
