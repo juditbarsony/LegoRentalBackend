@@ -458,3 +458,33 @@ def list_lego_sets(
             )
         )
     return response
+
+def _build_set_read(s: LegoSet, db: Session) -> LegoSetRead:
+    from app.models import RebrickableSet
+    img_url = None
+    if s.set_num:
+        rb = db.exec(select(RebrickableSet).where(
+            RebrickableSet.set_num == s.set_num
+        )).one_or_none()
+        if rb:
+            img_url = rb.img_url
+
+    return LegoSetRead(
+        id=s.id,
+        owner_id=s.owner_id,
+        created_at=s.created_at,
+        set_num=s.set_num,
+        title=s.title,
+        location=s.location,
+        rental_price=s.rental_price,
+        deposit=s.deposit,
+        scan_required=s.scan_required,
+        state=s.state,
+        notes=s.notes,
+        public=s.public,
+        number_of_items=s.number_of_items,
+        missing_items=(
+            s.missing_items_raw.split(",") if s.missing_items_raw else None
+        ),
+        img_url=img_url,
+    )

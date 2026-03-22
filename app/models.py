@@ -42,10 +42,12 @@ class LegoSet(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="users.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
 
     # Rebrickable kapcsolat
     set_num: str = Field(foreign_key="rebrickable_sets.set_num", index=True)
     title: str
+    image_url = Column(String, nullable=True)
 
     # Wireframe mezők
     location: str = Field(index=True)
@@ -59,6 +61,7 @@ class LegoSet(SQLModel, table=True):
 
     number_of_items: Optional[int] = Field(default=None)
     missing_items_raw: Optional[str] = Field(default=None)
+    
 
     # Relationships
     owner: Optional["User"] = Relationship(back_populates="lego_sets")

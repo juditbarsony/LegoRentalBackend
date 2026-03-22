@@ -43,7 +43,7 @@ class LegoSetBase(SQLModel):
     notes: Optional[str] = None
 
     public: bool = True
-
+    img_url: str | None = None 
 class LegoSetCreate(LegoSetBase):
     """
     Legalább az egyik kötelező: set_num vagy title.
@@ -64,6 +64,7 @@ class LegoSetRead(LegoSetBase):
     owner_id: int
     created_at: datetime
     number_of_items: Optional[int] = None
+
     
 class AvailabilityBase(SQLModel):
     start_date: date
