@@ -98,6 +98,7 @@ def create_lego_set(
             if db_lego_set.missing_items_raw
             else None
         ),
+        img_url=s.img_url,
     )
 
 def add_availability_period(
@@ -244,6 +245,7 @@ def list_lego_sets(
                 missing_items=(
                     s.missing_items_raw.split(",") if s.missing_items_raw else None
                 ),
+                img_url=s.img_url,
             )
         )
     return response
@@ -277,6 +279,7 @@ def get_lego_set(
             if lego_set.missing_items_raw
             else None
         ),
+        img_url=s.img_url,
     )
 
 @router.put("/{set_id}", response_model=LegoSetRead)
@@ -321,6 +324,7 @@ def update_lego_set(
             if getattr(lego_set, "missing_items_raw", None)
             else None
         ),
+        img_url=s.img_url,
     )
 
 @router.delete("/{set_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -455,6 +459,7 @@ def list_lego_sets(
                 missing_items=(
                     s.missing_items_raw.split(",") if s.missing_items_raw else None
                 ),
+               img_url=s.img_url,  
             )
         )
     return response
@@ -486,5 +491,5 @@ def _build_set_read(s: LegoSet, db: Session) -> LegoSetRead:
         missing_items=(
             s.missing_items_raw.split(",") if s.missing_items_raw else None
         ),
-        img_url=img_url,
+        img_url=s.img_url,
     )

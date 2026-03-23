@@ -64,7 +64,7 @@ class LegoSetRead(LegoSetBase):
     owner_id: int
     created_at: datetime
     number_of_items: Optional[int] = None
-
+    img_url: Optional[str] = None
     
 class AvailabilityBase(SQLModel):
     start_date: date

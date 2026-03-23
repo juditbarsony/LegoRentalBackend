@@ -36,6 +36,7 @@ class LegoSetBase(SQLModel):
     state: Optional[str] = None
     notes: Optional[str] = None
     public: bool = True
+    img_url: Optional[str] = None
 
 class LegoSet(SQLModel, table=True):
     __tablename__ = "lego_sets"
