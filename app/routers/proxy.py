@@ -1,4 +1,3 @@
-# routers/proxy.py
 import httpx
 from fastapi import APIRouter
 from fastapi.responses import Response
@@ -13,4 +12,5 @@ async def proxy_image(url: str):
         content=response.content,
         media_type=response.headers.get("content-type", "image/jpeg"),
     )
+
 
