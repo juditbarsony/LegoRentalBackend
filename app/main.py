@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_db_and_tables
 from app.routers import auth, sets, rentals
 from app.routers import proxy
+from app.routers import scan
+app.include_router(scan.router)
 
 
 app = FastAPI(title="LEGO Rental Backend")

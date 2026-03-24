@@ -92,3 +92,34 @@ class RentalRead(RentalBase):
     status: RentalStatus
     created_at: datetime
     updated_at: datetime
+    
+# --- SCAN SCHEMAS ---
+
+class ScanItemRead(BaseModel):
+    id: int
+    session_id: int
+    part_num: str
+    identified: bool
+    confidence: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+class ScanSessionCreate(BaseModel):
+    rental_id: int
+    lego_set_id: int
+
+class ScanSessionRead(BaseModel):
+    id: int
+    rental_id: int
+    lego_set_id: int
+    scanned_at: datetime
+    status: str
+    items: List[ScanItemRead] = []
+
+    class Config:
+        from_attributes = True
+
+class ScanIdentifyResult(BaseModel):
+    part_num: str
+    confidence: float

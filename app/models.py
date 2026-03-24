@@ -125,3 +125,26 @@ class Availability(SQLModel, table=True):
     end_date: date
 
     lego_set: Optional["LegoSet"] = Relationship(back_populates="availabilities")
+    
+# --- SCAN MODELS ---
+
+class ScanSession(SQLModel, table=True):
+    __tablename__ = "scan_sessions"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    rental_id: int = Field(foreign_key="rentals.id", index=True)
+    lego_set_id: int = Field(foreign_key="lego_sets.id", index=True)
+    scanned_at: datetime = Field(default_factory=datetime.utcnow)
+    status: str = Field(default="INCOMPLETE")  # COMPLETE / INCOMPLETE
+
+    items: List["ScanItem"] = Relationship(back_populates="session")
+
+
+class ScanItem(SQLModel, table=True):
+    __tablename__ = "scan_items"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    session_id: int = Field(foreign_key="scan_sessions.id", index=True)
+    part_num: str
+    identified: bool = Field(default=False)
+    confidence: Optional[float] = Field(default=None)
+
+    session: Optional["ScanSession"] = Relationship(back_populates="items")
