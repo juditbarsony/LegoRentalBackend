@@ -21,11 +21,15 @@ router = APIRouter(
     tags=["sets"],
 )
 
+# def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:  ← kikommentezve
+#     ...
+
 def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
     from app.models import RebrickableSet
     rb = db.exec(
         select(RebrickableSet).where(RebrickableSet.set_num == s.set_num)
     ).one_or_none()
+    print(f"DEBUG set_num={s.set_num}, rb={rb}, img_url={rb.img_url if rb else None}")
     return LegoSetRead(
         id=s.id,
         owner_id=s.owner_id,
@@ -45,6 +49,32 @@ def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
         ),
         img_url=rb.img_url if rb else None,
     )
+
+
+# def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
+#     from app.models import RebrickableSet
+#     rb = db.exec(
+#         select(RebrickableSet).where(RebrickableSet.set_num == s.set_num)
+#     ).one_or_none()
+#     return LegoSetRead(
+#         id=s.id,
+#         owner_id=s.owner_id,
+#         created_at=s.created_at,
+#         set_num=s.set_num,
+#         title=s.title,
+#         location=s.location,
+#         rental_price=s.rental_price,
+#         deposit=s.deposit,
+#         scan_required=s.scan_required,
+#         state=s.state,
+#         notes=s.notes,
+#         public=s.public,
+#         number_of_items=s.number_of_items,
+#         missing_items=(
+#             s.missing_items_raw.split(",") if s.missing_items_raw else None
+#         ),
+#         img_url=rb.img_url if rb else None,
+#     )
 
  
 @router.post("/", response_model=LegoSetRead, status_code=status.HTTP_201_CREATED)
@@ -413,22 +443,20 @@ def list_lego_sets(
             )
             statement = statement.where(~LegoSet.id.in_(rental_conflict_subq))
 
-    # elif not include_unavailable:
-    #     # Ha nincs időszak megadva, default: csak azokat, amiknek van availability és nincs aktív rental
-    #     has_availability_subq = select(Availability.lego_set_id).distinct()
-    #     statement = statement.where(LegoSet.id.in_(has_availability_subq))
 
-    #     active_statuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS", "RETURN_PENDING"]
-    #     active_rental_subq = (
-    #         select(Rental.lego_set_id)
-    #         .where(Rental.status.in_(active_statuses))
-    #         .distinct()
-    #     )
-    #     statement = statement.where(~LegoSet.id.in_(active_rental_subq))
 
     statement = statement.offset(offset).limit(limit)
     results = db.exec(statement).all()
-
+    
+    # Egy lekérdezéssel az összes img_url
+    set_nums = [s.set_num for s in results if s.set_num]
+    rb_map = {}
+    if set_nums:
+        rb_results = db.exec(
+            select(RebrickableSet).where(RebrickableSet.set_num.in_(set_nums))
+        ).all()
+        rb_map = {rb.set_num: rb.img_url for rb in rb_results}
+    
     response: List[LegoSetRead] = []
     for s in results:
         response.append(
@@ -449,20 +477,31 @@ def list_lego_sets(
                 missing_items=(
                     s.missing_items_raw.split(",") if s.missing_items_raw else None
                 ),
-               img_url=s.img_url,  
+                img_url=rb_map.get(s.set_num),
             )
         )
+   
+    #     response.append(
+    #         LegoSetRead(
+    #             id=s.id,
+    #             owner_id=s.owner_id,
+    #             created_at=s.created_at,
+    #             set_num=s.set_num,
+    #             title=s.title,
+    #             location=s.location,
+    #             rental_price=s.rental_price,
+    #             deposit=s.deposit,
+    #             scan_required=s.scan_required,
+    #             state=s.state,
+    #             notes=s.notes,
+    #             public=s.public,
+    #             number_of_items=s.number_of_items,
+    #             missing_items=(
+    #                 s.missing_items_raw.split(",") if s.missing_items_raw else None
+    #             ),
+    #            img_url=s.img_url,  
+    #         )
+    #     )
     return response
 
-def _build_set_read(s: LegoSet, db: Session) -> LegoSetRead:
-    from app.models import RebrickableSet
-    img_url = None
-    if s.set_num:
-        rb = db.exec(select(RebrickableSet).where(
-            RebrickableSet.set_num == s.set_num
-        )).one_or_none()
-        if rb:
-            img_url = rb.img_url
 
-    return build_lego_set_read(s.lego_set, db)
-    

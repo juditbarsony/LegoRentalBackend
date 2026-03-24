@@ -1,4 +1,4 @@
-import httpx
+﻿import httpx
 from fastapi import APIRouter
 from fastapi.responses import Response
 
@@ -11,6 +11,11 @@ async def proxy_image(url: str):
     return Response(
         content=response.content,
         media_type=response.headers.get("content-type", "image/jpeg"),
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400",
+        }
     )
+
 
 
