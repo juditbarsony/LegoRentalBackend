@@ -108,7 +108,7 @@ def create_lego_set(
     return build_lego_set_read(db_lego_set, db)
 
     
-
+@router.post("/{set_id}/availabilities", response_model=AvailabilityRead)
 def add_availability_period(
     set_id: int,
     period: AvailabilityCreate,
@@ -155,6 +155,27 @@ def add_availability_period(
         start_date=availability.start_date,
         end_date=availability.end_date,
     )
+
+@router.get("/{set_id}/availabilities", response_model=List[AvailabilityRead])
+def get_availabilities(
+    set_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    lego_set = db.get(LegoSet, set_id)
+    if not lego_set:
+        raise HTTPException(status_code=404, detail="Lego set not found.")
+    stmt = select(Availability).where(Availability.lego_set_id == set_id)
+    results = db.exec(stmt).all()
+    return [
+        AvailabilityRead(
+            id=a.id,
+            lego_set_id=a.lego_set_id,
+            start_date=a.start_date,
+            end_date=a.end_date,
+        )
+        for a in results
+    ]
 
 #  @router.get("/", response_model=List[LegoSetRead])
 # def list_lego_sets(
@@ -392,18 +413,18 @@ def list_lego_sets(
             )
             statement = statement.where(~LegoSet.id.in_(rental_conflict_subq))
 
-    elif not include_unavailable:
-        # Ha nincs időszak megadva, default: csak azokat, amiknek van availability és nincs aktív rental
-        has_availability_subq = select(Availability.lego_set_id).distinct()
-        statement = statement.where(LegoSet.id.in_(has_availability_subq))
+    # elif not include_unavailable:
+    #     # Ha nincs időszak megadva, default: csak azokat, amiknek van availability és nincs aktív rental
+    #     has_availability_subq = select(Availability.lego_set_id).distinct()
+    #     statement = statement.where(LegoSet.id.in_(has_availability_subq))
 
-        active_statuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS", "RETURN_PENDING"]
-        active_rental_subq = (
-            select(Rental.lego_set_id)
-            .where(Rental.status.in_(active_statuses))
-            .distinct()
-        )
-        statement = statement.where(~LegoSet.id.in_(active_rental_subq))
+    #     active_statuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS", "RETURN_PENDING"]
+    #     active_rental_subq = (
+    #         select(Rental.lego_set_id)
+    #         .where(Rental.status.in_(active_statuses))
+    #         .distinct()
+    #     )
+    #     statement = statement.where(~LegoSet.id.in_(active_rental_subq))
 
     statement = statement.offset(offset).limit(limit)
     results = db.exec(statement).all()
