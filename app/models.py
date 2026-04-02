@@ -135,8 +135,8 @@ class ScanSession(SQLModel, table=True):
     lego_set_id: int = Field(foreign_key="lego_sets.id", index=True)
     scanned_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = Field(default="INCOMPLETE")  # COMPLETE / INCOMPLETE
-
     items: List["ScanItem"] = Relationship(back_populates="session")
+
 
 
 class ScanItem(SQLModel, table=True):
@@ -144,7 +144,10 @@ class ScanItem(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     session_id: int = Field(foreign_key="scan_sessions.id", index=True)
     part_num: str
+    name: Optional[str] = Field(default=None)  #
+    color: Optional[str] = Field(default=None)
     identified: bool = Field(default=False)
     confidence: Optional[float] = Field(default=None)
 
     session: Optional["ScanSession"] = Relationship(back_populates="items")
+

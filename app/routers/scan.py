@@ -3,6 +3,9 @@ from sqlmodel import Session, select
 from typing import List
 import random
 
+import httpx
+from app.config import REBRICKABLE_API_KEY
+
 from app.database import get_session
 from app.models import ScanSession, ScanItem, LegoSet, Rental, User
 from app.schemas import ScanSessionCreate, ScanSessionRead, ScanIdentifyResult
@@ -29,21 +32,20 @@ async def identify_part(
     )
 
 
+
+
 @router.post("/session", response_model=ScanSessionRead)
-def create_scan_session(
+async def create_scan_session(
     data: ScanSessionCreate,
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Új scan session létrehozása egy rental-hoz."""
-    # Rental ellenőrzés
     rental = db.get(Rental, data.rental_id)
     if not rental:
         raise HTTPException(status_code=404, detail="Rental not found.")
     if rental.renter_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your rental.")
 
-    # LegoSet elemlistájának lekérése
     lego_set = db.get(LegoSet, data.lego_set_id)
     if not lego_set:
         raise HTTPException(status_code=404, detail="Lego set not found.")
@@ -58,20 +60,30 @@ def create_scan_session(
     db.commit()
     db.refresh(session)
 
-    # ScanItem-ek létrehozása az elemlistából
-    if lego_set.missing_items_raw:
-        parts = lego_set.missing_items_raw.split(",")
-        for part_num in parts:
-            item = ScanItem(
-                session_id=session.id,
-                part_num=part_num.strip(),
-                identified=False,
-            )
-            db.add(item)
-        db.commit()
+    # Rebrickable API-ból elemek lekérése
+    if lego_set.set_num:
+        url = f"https://rebrickable.com/api/v3/lego/sets/{lego_set.set_num}/parts/"
+        params = {"key": REBRICKABLE_API_KEY, "page_size": 1000}
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params)
 
+        if response.status_code == 200:
+            parts_data = response.json().get("results", [])
+            for p in parts_data:
+                quantity = p["quantity"]
+                for _ in range(quantity):
+                    item = ScanItem(
+                        session_id=session.id,
+                        part_num=p["part"]["part_num"],
+                        name=p["part"]["name"],
+                        color=p["color"]["name"],
+                         identified=False,
+                    )
+                    db.add(item)
+    db.commit()
     db.refresh(session)
     return session
+
 
 
 @router.patch("/session/{session_id}/item/{part_num}", response_model=ScanSessionRead)

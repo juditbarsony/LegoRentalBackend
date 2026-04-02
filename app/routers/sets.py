@@ -2,6 +2,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
+import httpx
+from app.config import REBRICKABLE_API_KEY
 
 from datetime import date
 
@@ -504,4 +506,53 @@ def list_lego_sets(
     #     )
     return response
 
+
+
+@router.get("/{set_id}/parts")
+async def get_set_parts(
+    set_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    lego_set = db.get(LegoSet, set_id)
+    if not lego_set:
+        raise HTTPException(status_code=404, detail="Lego set not found.")
+    if not lego_set.set_num:
+        raise HTTPException(
+            status_code=400,
+            detail="This set has no Rebrickable set_num."
+        )
+
+    url = f"https://rebrickable.com/api/v3/lego/sets/{lego_set.set_num}/parts/"
+    params = {
+        "key": REBRICKABLE_API_KEY,
+        "page_size": 1000,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Rebrickable API error: {response.status_code}"
+        )
+
+    data = response.json()
+    parts = [
+        {
+            "part_num": p["part"]["part_num"],
+            "name": p["part"]["name"],
+            "quantity": p["quantity"],
+            "color": p["color"]["name"],
+        }
+        for p in data.get("results", [])
+    ]
+
+    return {
+        "set_id": set_id,
+        "set_num": lego_set.set_num,
+        "total_parts": data.get("count", 0),
+        "parts": parts,
+    }
 

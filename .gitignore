@@ -39,3 +39,8 @@ obj/
 *.sln
 
 *.jfm
+
+#models
+app/models/*.keras
+app/models/*.tflite
+app/models/*.pkl

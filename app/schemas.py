@@ -99,6 +99,8 @@ class ScanItemRead(BaseModel):
     id: int
     session_id: int
     part_num: str
+    name: Optional[str] = None     
+    color: Optional[str] = None
     identified: bool
     confidence: Optional[float] = None
 
