@@ -9,7 +9,16 @@ from app.models import ScanSession, ScanItem, LegoSet, Rental, User
 from app.schemas import ScanSessionCreate, ScanSessionRead, ScanIdentifyResult, ScanIdentifyResponse, MarkBatchRequest 
 from app.routers.auth import get_current_user
 from app.ai_pipeline import identify_element
+import pandas as pd
+from pathlib import Path
 
+_COLORS_DF = pd.read_csv(Path(__file__).parent.parent / "data" / "colors_filled.csv")
+
+REBRICKABLE_ID_TO_B200 = {
+    str(int(row["id"])): str(row["m_colorname"]).strip().lower().replace(" ", "")  # ← NE replace(" ", "_")
+    for _, row in _COLORS_DF.iterrows()
+    if pd.notna(row["m_colorname"]) and str(row["m_colorname"]).strip() not in ("", "nan")
+}
 
 
 router = APIRouter(prefix="/scan", tags=["scan"])
@@ -48,7 +57,7 @@ async def identify_part(
     session_parts = {}
     for item in scan_items:
         pn = item.part_num
-        color = item.color.strip().lower().replace(" ", "_") if item.color else None
+        color = item.color.strip().lower().replace(" ", "") if item.color else None
         if pn not in session_parts:
             session_parts[pn] = set()
         if color:
@@ -125,15 +134,15 @@ async def create_scan_session(
             )
 
         parts_data = response.json().get("results", [])
-
+        
         # ✅ Összes item egyszerre, egyetlen commit
         items = [
             ScanItem(
                 session_id=scan_session.id,
                 part_num=p["part"]["part_num"],
                 name=p["part"]["name"],
-                color=p["color"]["name"],
-                status="missing",  # ← identified=False helyett
+                color=REBRICKABLE_ID_TO_B200.get(str(p["color"]["id"]), None),
+                status="missing",
             )
             for p in parts_data
             for _ in range(p["quantity"])
@@ -242,7 +251,6 @@ def mark_batch(
     current_user: User = Depends(get_current_user),
 ):
     scan_session = _get_session_or_403(session_id, db, current_user)
-
     if scan_session.status == "COMPLETE":
         raise HTTPException(status_code=400, detail="Session already complete.")
 
@@ -252,28 +260,12 @@ def mark_batch(
             ScanItem.part_num == element.part_num,
             ScanItem.status == "missing",
         )
-        if element.color_name:
-            stmt_color = stmt.where(ScanItem.color == element.color_name)
-            item = db.exec(stmt_color).first() or db.exec(stmt).first()
-        else:
-            item = db.exec(stmt).first()
-
+        item = db.exec(stmt).first()
         if item:
             item.status = "ai_identified"
             item.confidence = element.confidence
             db.add(item)
 
-    remaining = db.exec(
-        select(ScanItem).where(
-            ScanItem.session_id == session_id,
-            ScanItem.identified == False,
-        )
-    ).first()
-    if remaining is None:
-        scan_session.status = "COMPLETE"
-        db.add(scan_session)
-
     db.commit()
     db.refresh(scan_session)
     return scan_session
-

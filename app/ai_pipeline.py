@@ -21,7 +21,7 @@ PARTS_DF = pd.read_excel(BASE_DIR / "data" / "rebrickable_parts_final.xlsx")
 
 # B200_Name normalizálása: " Bright Red" → "bright_red"
 PARTS_DF["B200_Name_normalized"] = (
-    PARTS_DF["B200_Name"].str.strip().str.lower().str.replace(" ", "_")
+    PARTS_DF["B200_Name"].str.strip().str.lower().str.replace(" ", "")  
 )
 # {elem_id: {"bright_red", "med._stone_grey", ...}}
 SET_COLOR_MAP = (
@@ -87,7 +87,7 @@ def predict_shape(img_bgr: np.ndarray, top_k: int = 5):
 # ==========================================
 def filter_by_set_colors(top5: list, detected_color: str, color_map: dict = None) -> list:
     active_map = color_map if color_map else SET_COLOR_MAP  # ← session vagy globális
-    color_normalized = detected_color.strip().lower().replace(" ", "_")
+    color_normalized = detected_color
     filtered = [
         item for item in top5
         if item["elem_id"] in active_map and  # ← csak a szettben lévő elemek
