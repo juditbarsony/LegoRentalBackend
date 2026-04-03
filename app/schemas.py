@@ -99,9 +99,11 @@ class ScanItemRead(BaseModel):
     id: int
     session_id: int
     part_num: str
-    name: Optional[str] = None     
+    name: Optional[str] = None
     color: Optional[str] = None
-    identified: bool
+    status: str  # "ai_identified" | "manually_confirmed" | "missing"
+    confirmed_by: Optional[int] = None
+    confirmed_at: Optional[datetime] = None
     confidence: Optional[float] = None
 
     class Config:
@@ -124,4 +126,18 @@ class ScanSessionRead(BaseModel):
 
 class ScanIdentifyResult(BaseModel):
     part_num: str
+    color_name: Optional[str] = None
     confidence: float
+    detection_confidence: float        # YOLO box confidence
+    bounding_box: dict                 # x1, y1, x2, y2
+
+class ScanIdentifyResponse(BaseModel):
+    count: int
+    elements: List[ScanIdentifyResult]  # ← lista, nem egy elem
+    
+######   batch mark endpoint    #######
+
+class MarkBatchRequest(BaseModel):
+    elements: List[ScanIdentifyResult]
+
+

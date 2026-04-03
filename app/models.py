@@ -141,13 +141,14 @@ class ScanSession(SQLModel, table=True):
 
 class ScanItem(SQLModel, table=True):
     __tablename__ = "scan_items"
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)  # ← EZ HIÁNYZIK
     session_id: int = Field(foreign_key="scan_sessions.id", index=True)
     part_num: str
-    name: Optional[str] = Field(default=None)  #
+    name: Optional[str] = Field(default=None)
     color: Optional[str] = Field(default=None)
-    identified: bool = Field(default=False)
+    status: str = Field(default="missing")  # "ai_identified" | "manually_confirmed" | "missing"
+    confirmed_by: Optional[int] = Field(default=None, foreign_key="users.id")
+    confirmed_at: Optional[datetime] = Field(default=None)
     confidence: Optional[float] = Field(default=None)
-
     session: Optional["ScanSession"] = Relationship(back_populates="items")
 

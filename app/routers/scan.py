@@ -1,13 +1,16 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+﻿from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlmodel import Session, select
 from typing import List
 import httpx
-
+from typing import Optional, List
 from app.config import REBRICKABLE_API_KEY
 from app.database import get_session
 from app.models import ScanSession, ScanItem, LegoSet, Rental, User
-from app.schemas import ScanSessionCreate, ScanSessionRead, ScanIdentifyResult
+from app.schemas import ScanSessionCreate, ScanSessionRead, ScanIdentifyResult, ScanIdentifyResponse, MarkBatchRequest 
 from app.routers.auth import get_current_user
+from app.ai_pipeline import identify_element
+
+
 
 router = APIRouter(prefix="/scan", tags=["scan"])
 
@@ -28,23 +31,48 @@ def _get_session_or_403(session_id: int, db: Session, current_user: User) -> Sca
 # ==========================================
 # POST /scan/identify — AI elemfelismerés (egyelőre mock)
 # ==========================================
-@router.post("/identify", response_model=ScanIdentifyResult)
+@router.post("/identify", response_model=ScanIdentifyResponse)
 async def identify_part(
+    session_id: int = Query(...),
     file: UploadFile = File(...),
+    db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Kép alapján azonosítja a LEGO elemet.
-    TODO: kép továbbítása az AI microservice-nek.
-    Egyelőre mock válasz.
-    """
-    # TODO: valódi AI hívás ide kerül
-    # image_bytes = await file.read()
-    # result = await ai_service.predict(image_bytes)
-    return ScanIdentifyResult(
-        part_num="3001",
-        confidence=0.85,
-    )
+    
+    # Session part lista lekérése DB-ből
+    scan_items = db.exec(
+        select(ScanItem).where(ScanItem.session_id == session_id)
+    ).all()
+    
+    # {part_num: {color_normalized, ...}} szótár építése
+    session_parts = {}
+    for item in scan_items:
+        pn = item.part_num
+        color = item.color.strip().lower().replace(" ", "_") if item.color else None
+        if pn not in session_parts:
+            session_parts[pn] = set()
+        if color:
+            session_parts[pn].add(color)
+    
+    result = await identify_element(file, session_parts=session_parts)
+
+    if "error" in result:
+        raise HTTPException(status_code=422, detail=result["error"])
+
+    if not result.get("elements"):
+        raise HTTPException(status_code=422, detail="No elements detected.")
+
+    elements = [
+        ScanIdentifyResult(
+            part_num=e["elem_id"],
+            color_name=e.get("color"),
+            confidence=round(e["confidence"] / 100, 4),
+            detection_confidence=round(e["detection_confidence"] / 100, 4),
+            bounding_box=e["bounding_box"],
+        )
+        for e in result["elements"]
+    ]
+    return ScanIdentifyResponse(count=len(elements), elements=elements)
 
 
 # ==========================================
@@ -105,7 +133,7 @@ async def create_scan_session(
                 part_num=p["part"]["part_num"],
                 name=p["part"]["name"],
                 color=p["color"]["name"],
-                identified=False,
+                status="missing",  # ← identified=False helyett
             )
             for p in parts_data
             for _ in range(p["quantity"])
@@ -125,40 +153,46 @@ def mark_item_identified(
     session_id: int,
     part_num: str,
     confidence: float = 1.0,
+    color_name: Optional[str] = None,   # ← ÚJ
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Egy még nem azonosított elem példányát megtaláltnak jelöli."""
     scan_session = _get_session_or_403(session_id, db, current_user)
 
     if scan_session.status == "COMPLETE":
         raise HTTPException(status_code=400, detail="Session already complete.")
 
-    # ✅ Csak az első MÉG NEM azonosított példányt keresi
     stmt = select(ScanItem).where(
         ScanItem.session_id == session_id,
         ScanItem.part_num == part_num,
-        ScanItem.identified == False,
+        ScanItem.status == "missing",
     )
-    item = db.exec(stmt).first()
+    # Ha van szín info → precíz egyezés; ha nincs → első találat
+    if color_name:
+        stmt_with_color = stmt.where(ScanItem.color == color_name)
+        item = db.exec(stmt_with_color).first()
+        if not item:
+            # Fallback: szín nélkül próbálja (pl. ha a DB-ben más névformátum van)
+            item = db.exec(stmt).first()
+    else:
+        item = db.exec(stmt).first()
+
     if not item:
         raise HTTPException(
             status_code=404,
             detail="Part not found or all instances already identified."
         )
 
-    item.identified = True
+    item.status = "ai_identified"
     item.confidence = confidence
     db.add(item)
 
-    # Ha minden elem azonosítva → COMPLETE
     remaining = db.exec(
         select(ScanItem).where(
             ScanItem.session_id == session_id,
-            ScanItem.identified == False,
+            ScanItem.status == "missing",
         )
     ).first()
-
     if remaining is None:
         scan_session.status = "COMPLETE"
         db.add(scan_session)
@@ -198,3 +232,48 @@ def get_sessions_for_rental(
 
     stmt = select(ScanSession).where(ScanSession.rental_id == rental_id)
     return db.exec(stmt).all()
+
+
+@router.post("/session/{session_id}/mark-batch", response_model=ScanSessionRead)
+def mark_batch(
+    session_id: int,
+    body: MarkBatchRequest,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    scan_session = _get_session_or_403(session_id, db, current_user)
+
+    if scan_session.status == "COMPLETE":
+        raise HTTPException(status_code=400, detail="Session already complete.")
+
+    for element in body.elements:
+        stmt = select(ScanItem).where(
+            ScanItem.session_id == session_id,
+            ScanItem.part_num == element.part_num,
+            ScanItem.status == "missing",
+        )
+        if element.color_name:
+            stmt_color = stmt.where(ScanItem.color == element.color_name)
+            item = db.exec(stmt_color).first() or db.exec(stmt).first()
+        else:
+            item = db.exec(stmt).first()
+
+        if item:
+            item.status = "ai_identified"
+            item.confidence = element.confidence
+            db.add(item)
+
+    remaining = db.exec(
+        select(ScanItem).where(
+            ScanItem.session_id == session_id,
+            ScanItem.identified == False,
+        )
+    ).first()
+    if remaining is None:
+        scan_session.status = "COMPLETE"
+        db.add(scan_session)
+
+    db.commit()
+    db.refresh(scan_session)
+    return scan_session
+

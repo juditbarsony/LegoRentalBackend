@@ -17,9 +17,8 @@ knn_model   = joblib.load(str(BASE_DIR / "models" / "lego_color_v6_weighted.pkl"
 knn_scaler  = joblib.load(str(BASE_DIR / "models" / "lego_color_v6_scaler.pkl"))
 
 # Color-shape constraint mapping
-PARTS_DF = pd.read_excel(
-    r"C:\Users\bj\Documents\OE\szakdoga\colors\rebrickable_parts_final.xlsx"
-)
+PARTS_DF = pd.read_excel(BASE_DIR / "data" / "rebrickable_parts_final.xlsx")
+
 # B200_Name normalizálása: " Bright Red" → "bright_red"
 PARTS_DF["B200_Name_normalized"] = (
     PARTS_DF["B200_Name"].str.strip().str.lower().str.replace(" ", "_")
@@ -33,7 +32,7 @@ SET_COLOR_MAP = (
 
 # Osztálynevek (tanítóadat mappa sorrendje alapján)
 import os
-DATASET_DIR = r"C:\Users\bj\Documents\OE\szakdoga\10696_training_data_balanced_FINAL"
+DATASET_DIR = BASE_DIR / "training_data" / "10696_training_data_balanced_FINAL"
 CLASS_NAMES = sorted(os.listdir(DATASET_DIR))
 
 # ==========================================
@@ -80,22 +79,27 @@ def predict_shape(img_bgr: np.ndarray, top_k: int = 5):
             "confidence": round(float(preds[i]) * 100, 2)
         }
         for i in top_indices
+        if i < len(CLASS_NAMES)  # ← EZ AZ EGYETLEN VÁLTOZTATÁS
     ]
-#filter
-def filter_by_set_colors(top5: list, detected_color: str) -> list:
+
+# ==========================================
+# SZÍN-ALAK SZŰRŐ
+# ==========================================
+def filter_by_set_colors(top5: list, detected_color: str, color_map: dict = None) -> list:
+    active_map = color_map if color_map else SET_COLOR_MAP  # ← session vagy globális
     color_normalized = detected_color.strip().lower().replace(" ", "_")
-    
     filtered = [
         item for item in top5
-        if item["elem_id"] not in SET_COLOR_MAP or
-           color_normalized in SET_COLOR_MAP[item["elem_id"]]
-    ]
-    # Ha minden kiszűrődött → visszaadjuk az eredetit
+        if item["elem_id"] in active_map and  # ← csak a szettben lévő elemek
+            color_normalized in active_map[item["elem_id"]]
+]
     return filtered if filtered else top5
+
+
 # ==========================================
 # TELJES PIPELINE
 # ==========================================
-async def identify_element(file) -> dict:
+async def identify_element(file, session_parts: dict = None) -> dict:
     contents = await file.read()
     np_arr = np.frombuffer(contents, np.uint8)
     img_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -106,6 +110,14 @@ async def identify_element(file) -> dict:
     # YOLO detection
     results = yolo_model(img_bgr, verbose=False)
     boxes = results[0].boxes
+
+    # identify_element()-ben, a YOLO detekció után:
+    for box in boxes:
+        conf = float(box.conf[0])
+        coords = box.xyxy[0].tolist()
+        print(f"YOLO detektált: conf={conf:.2f}, coords={coords}")
+
+
 
     if boxes is None or len(boxes) == 0:
         return {"error": "No LEGO element detected in image."}
@@ -123,7 +135,13 @@ async def identify_element(file) -> dict:
 
         top5  = predict_shape(crop)
         color = predict_color(crop)
-        top5_filtered = filter_by_set_colors(top5, color)
+        top5_filtered = filter_by_set_colors(
+            top5, color, 
+            color_map=session_parts if session_parts else SET_COLOR_MAP
+        )
+        
+        if detection_confidence < 0.50:  # 50% alatti YOLO detekciók kiszűrése
+            continue
 
         identified_elements.append({
             "elem_id": top5_filtered[0]["elem_id"],
