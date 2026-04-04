@@ -144,7 +144,8 @@ async def create_scan_session(
             ip.part_num,
             ip.quantity,
             p.name as part_name,
-            c.name as color_name
+            c.name as color_name,
+            ip.img_url                       
         from rb_inventory_parts ip
         join rb_parts p on p.part_num = ip.part_num
         join rb_colors c on c.id = ip.color_id
@@ -173,6 +174,7 @@ async def create_scan_session(
                     part_num=row.part_num,
                     name=row.part_name,
                     color=normalized_color,
+                    img_url=row.img_url,
                     status="missing",
                 )
             )

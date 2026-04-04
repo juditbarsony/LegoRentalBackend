@@ -147,6 +147,7 @@ class ScanItem(SQLModel, table=True):
     part_num: str
     name: Optional[str] = Field(default=None)
     color: Optional[str] = Field(default=None)
+    img_url: Optional[str] = Field(default=None)
     status: str = Field(default="missing")  # "ai_identified" | "manually_confirmed" | "missing"
     confirmed_by: Optional[int] = Field(default=None, foreign_key="users.id")
     confirmed_at: Optional[datetime] = Field(default=None)

@@ -101,6 +101,7 @@ class ScanItemRead(BaseModel):
     part_num: str
     name: Optional[str] = None
     color: Optional[str] = None
+    img_url: Optional[str] = None
     status: str  # "ai_identified" | "manually_confirmed" | "missing"
     confirmed_by: Optional[int] = None
     confirmed_at: Optional[datetime] = None
@@ -137,12 +138,12 @@ class ScanIdentifyResponse(BaseModel):
     
 ######   batch mark endpoint    #######
 
-class MarkBatchRequest(BaseModel):
-    elements: List[ScanIdentifyResult]
-    
 class MarkBatchElement(BaseModel):
     part_num: str
     color_name: Optional[str] = None
     confidence: float
+
+class MarkBatchRequest(BaseModel):
+    elements: List[MarkBatchElement]
 
 
