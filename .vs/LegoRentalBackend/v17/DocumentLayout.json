@@ -7,24 +7,36 @@
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\scan.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\ai_pipeline.py||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\ai_pipeline.py||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\ai.py||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\ai.py||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\auth.py||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\auth.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\models.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\models.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\schemas.py||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\schemas.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\models.py||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\models.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\main.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\main.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\color_mapping.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\color_mapping.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\ai_pipeline.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\ai_pipeline.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\rentals.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\rentals.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\ai.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\ai.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\config.py||{8B382828-6202-11D1-8870-0000F87579D2}",
@@ -35,10 +47,6 @@
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\sets.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\main.py||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\main.py||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
@@ -47,20 +55,12 @@
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\proxy.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\rentals.py||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\routers\\rentals.py||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\enums.py||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\enums.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\database.py||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:app\\database.py||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.env||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{B853CC14-B3B7-428A-934D-8B9E18D261C8}|LegoRentalBackend.pyproj|solutionrelative:.env||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -78,143 +78,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ai_pipeline.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\ai_pipeline.py",
-              "RelativeDocumentMoniker": "app\\ai_pipeline.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\ai_pipeline.py",
-              "RelativeToolTip": "app\\ai_pipeline.py",
-              "ViewState": "AQIAAAMAAAAAAAAAAAAAABgAAAABAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-04-01T20:56:21.889Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "schemas.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\schemas.py",
-              "RelativeDocumentMoniker": "app\\schemas.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\schemas.py",
-              "RelativeToolTip": "app\\schemas.py",
-              "ViewState": "AQIAAFgAAAAAAAAAAAAhwGEAAAAKAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-08T16:42:18.55Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ai.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\ai.py",
-              "RelativeDocumentMoniker": "app\\routers\\ai.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\ai.py",
-              "RelativeToolTip": "app\\routers\\ai.py",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAABAAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-04-01T20:57:33.181Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": ".gitignore",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.gitignore",
-              "RelativeDocumentMoniker": ".gitignore",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.gitignore",
-              "RelativeToolTip": ".gitignore",
-              "ViewState": "AQIAABgAAAAAAAAAAAAAACcAAAAAAAAA",
-              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF8SURBVDhPjVNLTgJBEG1lwpoFB3GNK9fieA48hD8iwT/ihwgSDAIHgAGXXsEV18CNzL/LquqZdsYM6kteXqcy3fWqpmpNRBgOhyABBEgpAFVKPIMUcYzUyOU\u002BXM/b2qtU3vkSfRjjZTCAMAw1A2LwzdFoBPP5HNqdzuL27n4juibWI\u002BUshBA1DIkhEx9iEorFotgslQqGYbxxAGFEqt1MxmPWJLbLZdZ\u002Bv89q5PMFPiTR6z2zdaxR0fXA0XTBcVywkb4fwHXjRteecIDNQ7UmExVYAdPcxYaqclN46na5WenMKjtlVnTYwcXlVYaDqImW9beD5N/TeGy32QHXm6hZ03ZgiSQHp2fnWQ4oBmJqWSqwAqZpZjt4aLXAD4J0VqyZsmoubfB8H2r1eoaD6NXZ9HcHO\u002BSA3f4AjifXl8rItOETM8ckB9WTWpYD9RdeZ1PWVWAHWXPQaDb59f/w8LiqHeh1pvGkCaP6qB8yXusoxmuNZ7XmII4O9vGuEF86osuDYRkpYQAAAABJRU5ErkJggg==",
-              "WhenOpened": "2026-04-01T20:39:31.714Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "config.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\config.py",
-              "RelativeDocumentMoniker": "app\\config.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\config.py",
-              "RelativeToolTip": "app\\config.py",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-03-25T21:37:48.068Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "scan.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\scan.py",
-              "RelativeDocumentMoniker": "app\\routers\\scan.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\scan.py",
-              "RelativeToolTip": "app\\routers\\scan.py",
-              "ViewState": "AQIAAPQAAAAAAAAAAAAYwAoBAAAYAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-03-24T21:49:12.54Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "proxy.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\proxy.py",
-              "RelativeDocumentMoniker": "app\\routers\\proxy.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\proxy.py",
-              "RelativeToolTip": "app\\routers\\proxy.py",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAABIAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-03-23T18:42:23.714Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "rentals.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\rentals.py",
-              "RelativeDocumentMoniker": "app\\routers\\rentals.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\rentals.py",
-              "RelativeToolTip": "app\\routers\\rentals.py",
-              "ViewState": "AQIAAKQAAAAAAAAAAADwv3cBAAAhAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-09T20:23:04.831Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "sets.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\sets.py",
-              "RelativeDocumentMoniker": "app\\routers\\sets.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\sets.py",
-              "RelativeToolTip": "app\\routers\\sets.py",
-              "ViewState": "AQIAAIABAAAAAAAAAAAAAJ8BAAAcAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-08T20:17:59.097Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "models.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\models.py",
-              "RelativeDocumentMoniker": "app\\models.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\models.py",
-              "RelativeToolTip": "app\\models.py",
-              "ViewState": "AQIAAIUAAAAAAAAAAAAhwJQAAAA8AAAA",
+              "Title": "color_mapping.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\color_mapping.py",
+              "RelativeDocumentMoniker": "app\\color_mapping.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\color_mapping.py",
+              "RelativeToolTip": "app\\color_mapping.py",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAUAAAARAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-08T16:39:53.516Z"
+              "WhenOpened": "2026-04-03T18:59:16.207Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "main.py",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\main.py",
-              "RelativeDocumentMoniker": "app\\main.py",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\main.py",
-              "RelativeToolTip": "app\\main.py",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAYAAAAvAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-08T19:35:00.011Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "auth.py",
               "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\auth.py",
               "RelativeDocumentMoniker": "app\\routers\\auth.py",
@@ -227,7 +104,150 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ai_pipeline.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\ai_pipeline.py",
+              "RelativeDocumentMoniker": "app\\ai_pipeline.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\ai_pipeline.py",
+              "RelativeToolTip": "app\\ai_pipeline.py",
+              "ViewState": "AQIAAIEAAAAAAAAAAAAAAG8AAAAaAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-04-01T20:56:21.889Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "schemas.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\schemas.py",
+              "RelativeDocumentMoniker": "app\\schemas.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\schemas.py",
+              "RelativeToolTip": "app\\schemas.py",
+              "ViewState": "AQIAAHoAAAAAAAAAAAASwH4AAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-02-08T16:42:18.55Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ai.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\ai.py",
+              "RelativeDocumentMoniker": "app\\routers\\ai.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\ai.py",
+              "RelativeToolTip": "app\\routers\\ai.py",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-04-01T20:57:33.181Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "scan.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\scan.py",
+              "RelativeDocumentMoniker": "app\\routers\\scan.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\scan.py",
+              "RelativeToolTip": "app\\routers\\scan.py",
+              "ViewState": "AQIAAA4BAAAAAAAAAAAhwB8BAAAQAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-03-24T21:49:12.54Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 12,
+              "Title": "proxy.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\proxy.py",
+              "RelativeDocumentMoniker": "app\\routers\\proxy.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\proxy.py",
+              "RelativeToolTip": "app\\routers\\proxy.py",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABIAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-03-23T18:42:23.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "rentals.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\rentals.py",
+              "RelativeDocumentMoniker": "app\\routers\\rentals.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\rentals.py",
+              "RelativeToolTip": "app\\routers\\rentals.py",
+              "ViewState": "AQIAAKQAAAAAAAAAAADwv7IAAAARAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-02-09T20:23:04.831Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "sets.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\sets.py",
+              "RelativeDocumentMoniker": "app\\routers\\sets.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\routers\\sets.py",
+              "RelativeToolTip": "app\\routers\\sets.py",
+              "ViewState": "AQIAAJoBAAAAAAAAAIBZwJ8BAAAcAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-02-08T20:17:59.097Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "models.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\models.py",
+              "RelativeDocumentMoniker": "app\\models.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\models.py",
+              "RelativeToolTip": "app\\models.py",
+              "ViewState": "AQIAAIIAAAAAAAAAAAAhwIgAAAA6AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-02-08T16:39:53.516Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "main.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\main.py",
+              "RelativeDocumentMoniker": "app\\main.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\main.py",
+              "RelativeToolTip": "app\\main.py",
+              "ViewState": "AQIAAAkAAAAAAAAAAAAAAAYAAAAvAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-02-08T19:35:00.011Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "config.py",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\config.py",
+              "RelativeDocumentMoniker": "app\\config.py",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\config.py",
+              "RelativeToolTip": "app\\config.py",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-03-25T21:37:48.068Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": ".gitignore",
+              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.gitignore",
+              "RelativeDocumentMoniker": ".gitignore",
+              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.gitignore",
+              "RelativeToolTip": ".gitignore",
+              "ViewState": "AQIAABUAAAAAAAAAAIBJwCcAAAAAAAAA",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF8SURBVDhPjVNLTgJBEG1lwpoFB3GNK9fieA48hD8iwT/ihwgSDAIHgAGXXsEV18CNzL/LquqZdsYM6kteXqcy3fWqpmpNRBgOhyABBEgpAFVKPIMUcYzUyOU\u002BXM/b2qtU3vkSfRjjZTCAMAw1A2LwzdFoBPP5HNqdzuL27n4juibWI\u002BUshBA1DIkhEx9iEorFotgslQqGYbxxAGFEqt1MxmPWJLbLZdZ\u002Bv89q5PMFPiTR6z2zdaxR0fXA0XTBcVywkb4fwHXjRteecIDNQ7UmExVYAdPcxYaqclN46na5WenMKjtlVnTYwcXlVYaDqImW9beD5N/TeGy32QHXm6hZ03ZgiSQHp2fnWQ4oBmJqWSqwAqZpZjt4aLXAD4J0VqyZsmoubfB8H2r1eoaD6NXZ9HcHO\u002BSA3f4AjifXl8rItOETM8ckB9WTWpYD9RdeZ1PWVWAHWXPQaDb59f/w8LiqHeh1pvGkCaP6qB8yXusoxmuNZ7XmII4O9vGuEF86osuDYRkpYQAAAABJRU5ErkJggg==",
+              "WhenOpened": "2026-04-01T20:39:31.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
               "Title": "enums.py",
               "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\enums.py",
               "RelativeDocumentMoniker": "app\\enums.py",
@@ -235,23 +255,12 @@
               "RelativeToolTip": "app\\enums.py",
               "ViewState": "AQIAAAAAAAAAAAAAACBjwA8AAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-08T20:59:19.114Z"
+              "WhenOpened": "2026-02-08T20:59:19.114Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 14,
-              "Title": ".env",
-              "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.env",
-              "RelativeDocumentMoniker": ".env",
-              "ToolTip": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\.env",
-              "RelativeToolTip": ".env",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-02-08T16:45:44.629Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
               "Title": "database.py",
               "DocumentMoniker": "C:\\Users\\bj\\source\\repos\\LegoRentalBackend\\app\\database.py",
               "RelativeDocumentMoniker": "app\\database.py",
@@ -259,7 +268,8 @@
               "RelativeToolTip": "app\\database.py",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAABYAAAAvAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-02-08T16:01:13.54Z"
+              "WhenOpened": "2026-02-08T16:01:13.54Z",
+              "EditorCaption": ""
             }
           ]
         }

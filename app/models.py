@@ -3,7 +3,8 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import datetime, date
 from app.enums import LegoSetState, RentalStatus
-
+from typing import Optional
+from sqlalchemy import PrimaryKeyConstraint
 
 
 
@@ -152,3 +153,40 @@ class ScanItem(SQLModel, table=True):
     confidence: Optional[float] = Field(default=None)
     session: Optional["ScanSession"] = Relationship(back_populates="items")
 
+
+#----------Rebrickable models-----------------
+class RbInventory(SQLModel, table=True):
+    __tablename__ = "rb_inventories"
+
+    id: int = Field(primary_key=True)
+    version: int
+    set_num: str = Field(index=True)
+
+
+class RbInventoryPart(SQLModel, table=True):
+    __tablename__ = "rb_inventory_parts"
+
+    inventory_id: int = Field(primary_key=True)
+    part_num: str = Field(primary_key=True)
+    color_id: int = Field(primary_key=True)
+    is_spare: bool = Field(default=False, primary_key=True)
+    quantity: int
+    img_url: Optional[str] = None
+
+
+class RbPart(SQLModel, table=True):
+    __tablename__ = "rb_parts"
+
+    part_num: str = Field(primary_key=True)
+    name: str
+    part_cat_id: Optional[int] = None
+    part_material: Optional[str] = None
+
+
+class RbColor(SQLModel, table=True):
+    __tablename__ = "rb_colors"
+
+    id: int = Field(primary_key=True)
+    name: str
+    rgb: Optional[str] = None
+    is_trans: Optional[bool] = None

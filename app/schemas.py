@@ -139,5 +139,10 @@ class ScanIdentifyResponse(BaseModel):
 
 class MarkBatchRequest(BaseModel):
     elements: List[ScanIdentifyResult]
+    
+class MarkBatchElement(BaseModel):
+    part_num: str
+    color_name: Optional[str] = None
+    confidence: float
 
 

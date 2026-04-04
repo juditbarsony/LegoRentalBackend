@@ -6,6 +6,11 @@ from ultralytics import YOLO
 from pathlib import Path
 import pandas as pd
 
+from app.color_mapping import (
+    normalize_color_name,
+    model_color_to_rebrickable_name,
+)
+
 # ==========================================
 # MODELLEK BETÖLTÉSE (egyszer, indításkor)
 # ==========================================
@@ -20,9 +25,7 @@ knn_scaler  = joblib.load(str(BASE_DIR / "models" / "lego_color_v6_scaler.pkl"))
 PARTS_DF = pd.read_excel(BASE_DIR / "data" / "rebrickable_parts_final.xlsx")
 
 # B200_Name normalizálása: " Bright Red" → "bright_red"
-PARTS_DF["B200_Name_normalized"] = (
-    PARTS_DF["B200_Name"].str.strip().str.lower().str.replace(" ", "")  
-)
+PARTS_DF["B200_Name_normalized"] = PARTS_DF["B200_Name"].apply(normalize_color_name)
 # {elem_id: {"bright_red", "med._stone_grey", ...}}
 SET_COLOR_MAP = (
     PARTS_DF.groupby("Part")["B200_Name_normalized"]
@@ -85,14 +88,19 @@ def predict_shape(img_bgr: np.ndarray, top_k: int = 5):
 # ==========================================
 # SZÍN-ALAK SZŰRŐ
 # ==========================================
-def filter_by_set_colors(top5: list, detected_color: str, color_map: dict = None) -> list:
-    active_map = color_map if color_map else SET_COLOR_MAP  # ← session vagy globális
-    color_normalized = detected_color
+def filter_by_set_colors(top5: list, detected_color: str | None, color_map: dict = None) -> list:
+    active_map = color_map if color_map else SET_COLOR_MAP
+
+    mapped_color = model_color_to_rebrickable_name(detected_color)
+
+    if not mapped_color:
+        return top5
+
     filtered = [
         item for item in top5
-        if item["elem_id"] in active_map and  # ← csak a szettben lévő elemek
-            color_normalized in active_map[item["elem_id"]]
-]
+        if item["elem_id"] in active_map and mapped_color in active_map[item["elem_id"]]
+    ]
+
     return filtered if filtered else top5
 
 
@@ -134,18 +142,22 @@ async def identify_element(file, session_parts: dict = None) -> dict:
             continue
 
         top5  = predict_shape(crop)
-        color = predict_color(crop)
+        model_color = predict_color(crop)
+        mapped_color = model_color_to_rebrickable_name(model_color)
+
         top5_filtered = filter_by_set_colors(
-            top5, color, 
+            top5,
+            model_color,
             color_map=session_parts if session_parts else SET_COLOR_MAP
-        )
+)
         
         if detection_confidence < 0.50:  # 50% alatti YOLO detekciók kiszűrése
             continue
 
         identified_elements.append({
             "elem_id": top5_filtered[0]["elem_id"],
-            "color": color,
+            "color": mapped_color,
+            "color_model_output": model_color,
             "confidence": top5_filtered[0]["confidence"],
             "detection_confidence": round(detection_confidence * 100, 2),
             "top5_raw": top5,

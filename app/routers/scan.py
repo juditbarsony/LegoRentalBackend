@@ -5,20 +5,23 @@ import httpx
 from typing import Optional, List
 from app.config import REBRICKABLE_API_KEY
 from app.database import get_session
-from app.models import ScanSession, ScanItem, LegoSet, Rental, User
+from app.models import ScanSession, ScanItem, LegoSet, Rental, User, RbInventory, RbInventoryPart, RbPart, RbColor
 from app.schemas import ScanSessionCreate, ScanSessionRead, ScanIdentifyResult, ScanIdentifyResponse, MarkBatchRequest 
 from app.routers.auth import get_current_user
 from app.ai_pipeline import identify_element
 import pandas as pd
 from pathlib import Path
+from sqlalchemy import text
 
-_COLORS_DF = pd.read_csv(Path(__file__).parent.parent / "data" / "colors_filled.csv")
 
-REBRICKABLE_ID_TO_B200 = {
-    str(int(row["id"])): str(row["m_colorname"]).strip().lower().replace(" ", "")  # ← NE replace(" ", "_")
-    for _, row in _COLORS_DF.iterrows()
-    if pd.notna(row["m_colorname"]) and str(row["m_colorname"]).strip() not in ("", "nan")
-}
+
+
+from app.color_mapping import (
+    normalize_color_name,
+    normalize_db_color,
+    model_color_to_rebrickable_name,
+    rebrickable_id_to_name,
+)
 
 
 router = APIRouter(prefix="/scan", tags=["scan"])
@@ -35,6 +38,10 @@ def _get_session_or_403(session_id: int, db: Session, current_user: User) -> Sca
     if not rental or rental.renter_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your session.")
     return scan_session
+
+
+
+
 
 
 # ==========================================
@@ -57,9 +64,11 @@ async def identify_part(
     session_parts = {}
     for item in scan_items:
         pn = item.part_num
-        color = item.color.strip().lower().replace(" ", "") if item.color else None
+        color = normalize_db_color(item.color)
+
         if pn not in session_parts:
             session_parts[pn] = set()
+
         if color:
             session_parts[pn].add(color)
     
@@ -93,19 +102,32 @@ async def create_scan_session(
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    # Rental ellenőrzés
     rental = db.get(Rental, data.rental_id)
     if not rental:
         raise HTTPException(status_code=404, detail="Rental not found.")
     if rental.renter_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your rental.")
 
-    # LegoSet ellenőrzés
     lego_set = db.get(LegoSet, data.lego_set_id)
     if not lego_set:
         raise HTTPException(status_code=404, detail="Lego set not found.")
 
-    # Session létrehozása
+    if not lego_set.set_num:
+        raise HTTPException(status_code=400, detail="Lego set has no set_num.")
+
+    inventory_stmt = (
+        select(RbInventory)
+        .where(RbInventory.set_num == lego_set.set_num)
+        .order_by(RbInventory.version.desc())
+    )
+    inventory = db.exec(inventory_stmt).first()
+
+    if not inventory:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No local Rebrickable inventory found for set {lego_set.set_num}"
+        )
+
     scan_session = ScanSession(
         rental_id=data.rental_id,
         lego_set_id=data.lego_set_id,
@@ -115,43 +137,54 @@ async def create_scan_session(
     db.commit()
     db.refresh(scan_session)
 
-    # Rebrickable API-ból elemek lekérése
-    if lego_set.set_num:
-        url = f"https://rebrickable.com/api/v3/lego/sets/{lego_set.set_num}/parts/"
-        params = {"key": REBRICKABLE_API_KEY, "page_size": 1000}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params)
 
-        if response.status_code != 200:
-            # Session megmaradt, de jelezzük, hogy az elemek nem töltődtek be
-            scan_session.status = "ERROR_PARTS_FETCH"
-            db.add(scan_session)
-            db.commit()
-            raise HTTPException(
-                status_code=502,
-                detail=f"Rebrickable API error: {response.status_code}"
-            )
+    parts_result = db.execute(text("""
+        select
+            ip.part_num,
+            ip.quantity,
+            p.name as part_name,
+            c.name as color_name
+        from rb_inventory_parts ip
+        join rb_parts p on p.part_num = ip.part_num
+        join rb_colors c on c.id = ip.color_id
+        where ip.inventory_id = :inventory_id
+        and ip.is_spare = false
+    """), {"inventory_id": inventory.id})
 
-        parts_data = response.json().get("results", [])
-        
-        # ✅ Összes item egyszerre, egyetlen commit
-        items = [
-            ScanItem(
-                session_id=scan_session.id,
-                part_num=p["part"]["part_num"],
-                name=p["part"]["name"],
-                color=REBRICKABLE_ID_TO_B200.get(str(p["color"]["id"]), None),
-                status="missing",
-            )
-            for p in parts_data
-            for _ in range(p["quantity"])
-        ]
-        db.add_all(items)
+    rows = parts_result.all()
+
+    if not rows:
+        scan_session.status = "ERROR_PARTS_FETCH"
+        db.add(scan_session)
         db.commit()
+        raise HTTPException(
+            status_code=404,
+            detail=f"Inventory exists, but has no parts for set {lego_set.set_num}"
+        )
 
+    items = []
+    for row in rows:
+        normalized_color = normalize_color_name(row.color_name)
+        for _ in range(row.quantity):
+            items.append(
+                ScanItem(
+                    session_id=scan_session.id,
+                    part_num=row.part_num,
+                    name=row.part_name,
+                    color=normalized_color,
+                    status="missing",
+                )
+            )
+
+    print(f"DEBUG rows: {len(rows)}")
+    print(f"DEBUG items: {len(items)}")
+    db.add_all(items)
+    db.commit()
     db.refresh(scan_session)
     return scan_session
+
+
 
 
 # ==========================================
@@ -178,19 +211,13 @@ def mark_item_identified(
     )
     # Ha van szín info → precíz egyezés; ha nincs → első találat
     if color_name:
-        stmt_with_color = stmt.where(ScanItem.color == color_name)
+        normalized_color = normalize_color_name(color_name)
+        stmt_with_color = stmt.where(ScanItem.color == normalized_color)
         item = db.exec(stmt_with_color).first()
         if not item:
-            # Fallback: szín nélkül próbálja (pl. ha a DB-ben más névformátum van)
             item = db.exec(stmt).first()
     else:
         item = db.exec(stmt).first()
-
-    if not item:
-        raise HTTPException(
-            status_code=404,
-            detail="Part not found or all instances already identified."
-        )
 
     item.status = "ai_identified"
     item.confidence = confidence
@@ -251,20 +278,51 @@ def mark_batch(
     current_user: User = Depends(get_current_user),
 ):
     scan_session = _get_session_or_403(session_id, db, current_user)
+
     if scan_session.status == "COMPLETE":
         raise HTTPException(status_code=400, detail="Session already complete.")
 
+    AUTO_IDENTIFY_THRESHOLD = 0.50  # <-- ezt teheted a fájl tetejére is konstansként
+
+    for element in body.elements:
+        if element.confidence < AUTO_IDENTIFY_THRESHOLD:  # <-- ez jön elsőnek
+            continue
+    
+    
     for element in body.elements:
         stmt = select(ScanItem).where(
             ScanItem.session_id == session_id,
             ScanItem.part_num == element.part_num,
             ScanItem.status == "missing",
         )
-        item = db.exec(stmt).first()
+
+        item = None
+
+        if getattr(element, "color_name", None):
+            normalized_color = normalize_color_name(element.color_name)
+            if normalized_color:
+                item = db.exec(
+                    stmt.where(ScanItem.color == normalized_color)
+                ).first()
+
+        if not item:
+            item = db.exec(stmt).first()
+
         if item:
             item.status = "ai_identified"
             item.confidence = element.confidence
             db.add(item)
+
+    remaining = db.exec(
+        select(ScanItem).where(
+            ScanItem.session_id == session_id,
+            ScanItem.status == "missing",
+        )
+    ).first()
+
+    if remaining is None:
+        scan_session.status = "COMPLETE"
+        db.add(scan_session)
 
     db.commit()
     db.refresh(scan_session)
