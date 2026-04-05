@@ -1,35 +1,35 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+﻿from datetime import datetime, UTC
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlmodel import Session, select
-from typing import List
-import httpx
-from typing import Optional, List
-from app.config import REBRICKABLE_API_KEY
-from app.database import get_session
-from app.models import ScanSession, ScanItem, LegoSet, Rental, User, RbInventory, RbInventoryPart, RbPart, RbColor
-from app.schemas import ScanSessionCreate, ScanSessionRead, ScanIdentifyResult, ScanIdentifyResponse, MarkBatchRequest 
-from app.routers.auth import get_current_user
-from app.ai_pipeline import identify_element
-import pandas as pd
-from pathlib import Path
+from typing import List, Optional
 from sqlalchemy import text
 
-
-
-
+from app.database import get_session
+from app.models import (
+    ScanSession,
+    ScanItem,
+    LegoSet,
+    Rental,
+    User,
+    RbInventory,
+)
+from app.schemas import (
+    ScanSessionCreate,
+    ScanSessionRead,
+    ScanIdentifyResult,
+    ScanIdentifyResponse,
+    MarkBatchRequest,
+)
+from app.routers.auth import get_current_user
+from app.ai_pipeline import identify_element
 from app.color_mapping import (
     normalize_color_name,
     normalize_db_color,
-    model_color_to_rebrickable_name,
-    rebrickable_id_to_name,
 )
-
 
 router = APIRouter(prefix="/scan", tags=["scan"])
 
 
-# ==========================================
-# SEGÉDFÜGGVÉNY: session tulajdonosának ellenőrzése
-# ==========================================
 def _get_session_or_403(session_id: int, db: Session, current_user: User) -> ScanSession:
     scan_session = db.get(ScanSession, session_id)
     if not scan_session:
@@ -40,13 +40,6 @@ def _get_session_or_403(session_id: int, db: Session, current_user: User) -> Sca
     return scan_session
 
 
-
-
-
-
-# ==========================================
-# POST /scan/identify — AI elemfelismerés (egyelőre mock)
-# ==========================================
 @router.post("/identify", response_model=ScanIdentifyResponse)
 async def identify_part(
     session_id: int = Query(...),
@@ -54,13 +47,15 @@ async def identify_part(
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    
-    # Session part lista lekérése DB-ből
+    scan_session = _get_session_or_403(session_id, db, current_user)
+
+    if scan_session.status == "COMPLETE":
+        raise HTTPException(status_code=400, detail="Session already complete.")
+
     scan_items = db.exec(
         select(ScanItem).where(ScanItem.session_id == session_id)
     ).all()
-    
-    # {part_num: {color_normalized, ...}} szótár építése
+
     session_parts = {}
     for item in scan_items:
         pn = item.part_num
@@ -71,7 +66,7 @@ async def identify_part(
 
         if color:
             session_parts[pn].add(color)
-    
+
     result = await identify_element(file, session_parts=session_parts)
 
     if "error" in result:
@@ -93,9 +88,6 @@ async def identify_part(
     return ScanIdentifyResponse(count=len(elements), elements=elements)
 
 
-# ==========================================
-# POST /scan/session — Új scan session létrehozása
-# ==========================================
 @router.post("/session", response_model=ScanSessionRead)
 async def create_scan_session(
     data: ScanSessionCreate,
@@ -107,6 +99,18 @@ async def create_scan_session(
         raise HTTPException(status_code=404, detail="Rental not found.")
     if rental.renter_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your rental.")
+
+    existing_incomplete = db.exec(
+        select(ScanSession)
+        .where(
+            ScanSession.rental_id == data.rental_id,
+            ScanSession.status == "INCOMPLETE",
+        )
+        .order_by(ScanSession.id.desc())
+    ).first()
+
+    if existing_incomplete:
+        return existing_incomplete
 
     lego_set = db.get(LegoSet, data.lego_set_id)
     if not lego_set:
@@ -137,20 +141,18 @@ async def create_scan_session(
     db.commit()
     db.refresh(scan_session)
 
-
-
     parts_result = db.execute(text("""
         select
             ip.part_num,
             ip.quantity,
             p.name as part_name,
             c.name as color_name,
-            ip.img_url                       
+            ip.img_url
         from rb_inventory_parts ip
         join rb_parts p on p.part_num = ip.part_num
         join rb_colors c on c.id = ip.color_id
         where ip.inventory_id = :inventory_id
-        and ip.is_spare = false
+          and ip.is_spare = false
     """), {"inventory_id": inventory.id})
 
     rows = parts_result.all()
@@ -179,25 +181,74 @@ async def create_scan_session(
                 )
             )
 
-    print(f"DEBUG rows: {len(rows)}")
-    print(f"DEBUG items: {len(items)}")
     db.add_all(items)
     db.commit()
     db.refresh(scan_session)
     return scan_session
 
 
+@router.get("/session/{session_id}", response_model=ScanSessionRead)
+def get_scan_session(
+    session_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    return _get_session_or_403(session_id, db, current_user)
 
 
-# ==========================================
-# PATCH /scan/session/{session_id}/item/{part_num} — Elem megtaláltnak jelölése
-# ==========================================
+@router.get("/rental/{rental_id}", response_model=List[ScanSessionRead])
+def get_sessions_for_rental(
+    rental_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    rental = db.get(Rental, rental_id)
+    if not rental:
+        raise HTTPException(status_code=404, detail="Rental not found.")
+    if rental.renter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your rental.")
+
+    stmt = (
+        select(ScanSession)
+        .where(ScanSession.rental_id == rental_id)
+        .order_by(ScanSession.id.desc())
+    )
+    return db.exec(stmt).all()
+
+
+@router.get("/rental/{rental_id}/active-session", response_model=ScanSessionRead)
+def get_active_session_for_rental(
+    rental_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    rental = db.get(Rental, rental_id)
+    if not rental:
+        raise HTTPException(status_code=404, detail="Rental not found.")
+    if rental.renter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your rental.")
+
+    active_session = db.exec(
+        select(ScanSession)
+        .where(
+            ScanSession.rental_id == rental_id,
+            ScanSession.status == "INCOMPLETE",
+        )
+        .order_by(ScanSession.id.desc())
+    ).first()
+
+    if not active_session:
+        raise HTTPException(status_code=404, detail="No active session for this rental.")
+
+    return active_session
+
+
 @router.patch("/session/{session_id}/item/{part_num}", response_model=ScanSessionRead)
 def mark_item_identified(
     session_id: int,
     part_num: str,
     confidence: float = 1.0,
-    color_name: Optional[str] = None,   # ← ÚJ
+    color_name: Optional[str] = None,
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -211,7 +262,7 @@ def mark_item_identified(
         ScanItem.part_num == part_num,
         ScanItem.status == "missing",
     )
-    # Ha van szín info → precíz egyezés; ha nincs → első találat
+
     if color_name:
         normalized_color = normalize_color_name(color_name)
         stmt_with_color = stmt.where(ScanItem.color == normalized_color)
@@ -220,6 +271,9 @@ def mark_item_identified(
             item = db.exec(stmt).first()
     else:
         item = db.exec(stmt).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Matching missing item not found.")
 
     item.status = "ai_identified"
     item.confidence = confidence
@@ -231,6 +285,7 @@ def mark_item_identified(
             ScanItem.status == "missing",
         )
     ).first()
+
     if remaining is None:
         scan_session.status = "COMPLETE"
         db.add(scan_session)
@@ -240,39 +295,54 @@ def mark_item_identified(
     return scan_session
 
 
-# ==========================================
-# GET /scan/session/{session_id} — Session lekérése
-# ==========================================
-@router.get("/session/{session_id}", response_model=ScanSessionRead)
-def get_scan_session(
+@router.patch("/session/{session_id}/item/{item_id}/confirm", response_model=ScanSessionRead)
+def manual_confirm_item(
     session_id: int,
+    item_id: int,
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return _get_session_or_403(session_id, db, current_user)
+    scan_session = _get_session_or_403(session_id, db, current_user)
+
+    if scan_session.status == "COMPLETE":
+        raise HTTPException(status_code=400, detail="Session already complete.")
+
+    item = db.exec(
+        select(ScanItem).where(
+            ScanItem.id == item_id,
+            ScanItem.session_id == session_id,
+            ScanItem.status == "missing",
+        )
+    ).first()
+
+    if not item:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found or already confirmed."
+        )
+
+    item.status = "manually_confirmed"
+    item.confirmed_by = current_user.id
+    item.confirmed_at = datetime.now(UTC)
+    db.add(item)
+
+    remaining = db.exec(
+        select(ScanItem).where(
+            ScanItem.session_id == session_id,
+            ScanItem.status == "missing",
+        )
+    ).first()
+
+    if remaining is None:
+        scan_session.status = "COMPLETE"
+        db.add(scan_session)
+
+    db.commit()
+    db.refresh(scan_session)
+    return scan_session
 
 
-# ==========================================
-# GET /scan/rental/{rental_id} — Rental összes sessionje
-# ==========================================
-@router.get("/rental/{rental_id}", response_model=List[ScanSessionRead])
-def get_sessions_for_rental(
-    rental_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    """Egy rental összes scan sessionje — csak a saját rentalhoz."""
-    rental = db.get(Rental, rental_id)
-    if not rental:
-        raise HTTPException(status_code=404, detail="Rental not found.")
-    if rental.renter_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not your rental.")
-
-    stmt = select(ScanSession).where(ScanSession.rental_id == rental_id)
-    return db.exec(stmt).all()
-
-
-@router.post("/session/{session_id}/mark-batch", response_model=ScanSessionRead)
+@router.patch("/session/{session_id}/mark-batch", response_model=ScanSessionRead)
 def mark_batch(
     session_id: int,
     body: MarkBatchRequest,
@@ -284,14 +354,12 @@ def mark_batch(
     if scan_session.status == "COMPLETE":
         raise HTTPException(status_code=400, detail="Session already complete.")
 
-    AUTO_IDENTIFY_THRESHOLD = 0.50  # <-- ezt teheted a fájl tetejére is konstansként
+    auto_identify_threshold = 0.50
 
     for element in body.elements:
-        if element.confidence < AUTO_IDENTIFY_THRESHOLD:  # <-- ez jön elsőnek
+        if element.confidence < auto_identify_threshold:
             continue
-    
-    
-    for element in body.elements:
+
         stmt = select(ScanItem).where(
             ScanItem.session_id == session_id,
             ScanItem.part_num == element.part_num,
@@ -325,6 +393,55 @@ def mark_batch(
     if remaining is None:
         scan_session.status = "COMPLETE"
         db.add(scan_session)
+
+    db.commit()
+    db.refresh(scan_session)
+    return scan_session
+
+
+@router.patch("/session/{session_id}/reset", response_model=ScanSessionRead)
+def reset_scan_session(
+    session_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    scan_session = _get_session_or_403(session_id, db, current_user)
+
+    if scan_session.status == "COMPLETE":
+        raise HTTPException(status_code=400, detail="Completed session cannot be reset.")
+
+    items = db.exec(
+        select(ScanItem).where(ScanItem.session_id == session_id)
+    ).all()
+
+    for item in items:
+        item.status = "missing"
+        item.confidence = None
+        item.confirmed_by = None
+        item.confirmed_at = None
+        db.add(item)
+
+    scan_session.status = "INCOMPLETE"
+    db.add(scan_session)
+
+    db.commit()
+    db.refresh(scan_session)
+    return scan_session
+
+
+@router.patch("/session/{session_id}/finish", response_model=ScanSessionRead)
+def finish_scan_session(
+    session_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    scan_session = _get_session_or_403(session_id, db, current_user)
+
+    if scan_session.status == "COMPLETE":
+        raise HTTPException(status_code=400, detail="Session already complete.")
+
+    scan_session.status = "COMPLETE"
+    db.add(scan_session)
 
     db.commit()
     db.refresh(scan_session)

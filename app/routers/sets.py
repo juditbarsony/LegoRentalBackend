@@ -23,8 +23,7 @@ router = APIRouter(
     tags=["sets"],
 )
 
-# def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:  ← kikommentezve
-#     ...
+
 
 def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
     from app.models import RebrickableSet
@@ -53,32 +52,6 @@ def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
     )
 
 
-# def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
-#     from app.models import RebrickableSet
-#     rb = db.exec(
-#         select(RebrickableSet).where(RebrickableSet.set_num == s.set_num)
-#     ).one_or_none()
-#     return LegoSetRead(
-#         id=s.id,
-#         owner_id=s.owner_id,
-#         created_at=s.created_at,
-#         set_num=s.set_num,
-#         title=s.title,
-#         location=s.location,
-#         rental_price=s.rental_price,
-#         deposit=s.deposit,
-#         scan_required=s.scan_required,
-#         state=s.state,
-#         notes=s.notes,
-#         public=s.public,
-#         number_of_items=s.number_of_items,
-#         missing_items=(
-#             s.missing_items_raw.split(",") if s.missing_items_raw else None
-#         ),
-#         img_url=rb.img_url if rb else None,
-#     )
-
- 
 @router.post("/", response_model=LegoSetRead, status_code=status.HTTP_201_CREATED)
 def create_lego_set(
     lego_set_in: LegoSetCreate,
@@ -209,107 +182,6 @@ def get_availabilities(
         for a in results
     ]
 
-#  @router.get("/", response_model=List[LegoSetRead])
-# def list_lego_sets(
-#     db: Session = Depends(get_session),
-#     current_user: User = Depends(get_current_user),
-#     keyword: str | None = None,
-#     set_num: str | None = None,
-#     location: str | None = None,
-#     state: str | None = None,
-#     theme_id: int | None = None,
-#     public: bool = True,
-#     available_from: date | None = None,
-#     available_to: date | None = None,
-#     limit: int = Query(default=20, le=100),
-#     offset: int = 0,
-# ):
-#     """
-#     Listázza a LEGO seteket szűrőkkel:
-#     - keyword: title-ben keres (case-insensitive LIKE)
-#     - set_num: pontos Rebrickable set_num
-#     - location: pontos város
-#     - state: NEW/USED/TRASH
-#     - theme_id: Rebrickable theme_id (kategória)
-#     - public: csak publikus setek (default: True)
-#     - available_from / available_to: csak azok a setek, amiknek van availability ebben az időszakban
-#     - limit / offset: pagináció
-#     """
-#     from app.models import RebrickableSet, Availability
-
-#     statement = select(LegoSet)
-
-#     # Public filter
-#     if public:
-#         statement = statement.where(LegoSet.public == True)  # noqa: E712
-
-#     # Set_num pontos keresés
-#     if set_num:
-#         statement = statement.where(LegoSet.set_num == set_num)
-
-#     # Location
-#     if location:
-#         statement = statement.where(LegoSet.location == location)
-
-#     # State
-#     if state:
-#         statement = statement.where(LegoSet.state == state)
-
-#     # Keyword (title LIKE)
-#     if keyword:
-#         like = f"%{keyword}%"
-#         statement = statement.where(LegoSet.title.ilike(like))
-
-#     # Theme_id – join RebrickableSet
-#     if theme_id is not None:
-#         statement = statement.join(
-#             RebrickableSet, LegoSet.set_num == RebrickableSet.set_num
-#         ).where(RebrickableSet.theme_id == theme_id)
-
-#     # Availability időszak szerinti szűrés
-#     if available_from and available_to:
-#         # csak azok a setek, amiknek van legalább egy availability intervalluma,
-#         # ami lefedi (vagy átfed) a kért időszakot
-#         subq = (
-#             select(Availability.lego_set_id)
-#             .where(
-#                 Availability.start_date <= available_to,
-#                 Availability.end_date >= available_from,
-#             )
-#             .distinct()
-#         )
-#         statement = statement.where(LegoSet.id.in_(subq))
-
-#     # Pagináció
-#     statement = statement.offset(offset).limit(limit)
-
-#     results = db.exec(statement).all()
-
-#     # Response build
-#     response: List[LegoSetRead] = []
-#     for s in results:
-#         response.append(
-#             LegoSetRead(
-#                 id=s.id,
-#                 owner_id=s.owner_id,
-#                 created_at=s.created_at,
-#                 set_num=s.set_num,
-#                 title=s.title,
-#                 location=s.location,
-#                 rental_price=s.rental_price,
-#                 deposit=s.deposit,
-#                 scan_required=s.scan_required,
-#                 state=s.state,
-#                 notes=s.notes,
-#                 public=s.public,
-#                 number_of_items=s.number_of_items,
-#                 missing_items=(
-#                     s.missing_items_raw.split(",") if s.missing_items_raw else None
-#                 ),
-#                 img_url=s.img_url,
-#             )
-#         )
-#     return response
 
 @router.get("/{set_id}", response_model=LegoSetRead)
 def get_lego_set(
@@ -483,27 +355,6 @@ def list_lego_sets(
             )
         )
    
-    #     response.append(
-    #         LegoSetRead(
-    #             id=s.id,
-    #             owner_id=s.owner_id,
-    #             created_at=s.created_at,
-    #             set_num=s.set_num,
-    #             title=s.title,
-    #             location=s.location,
-    #             rental_price=s.rental_price,
-    #             deposit=s.deposit,
-    #             scan_required=s.scan_required,
-    #             state=s.state,
-    #             notes=s.notes,
-    #             public=s.public,
-    #             number_of_items=s.number_of_items,
-    #             missing_items=(
-    #                 s.missing_items_raw.split(",") if s.missing_items_raw else None
-    #             ),
-    #            img_url=s.img_url,  
-    #         )
-    #     )
     return response
 
 
