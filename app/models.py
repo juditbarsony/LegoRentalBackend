@@ -191,3 +191,16 @@ class RbColor(SQLModel, table=True):
     name: str
     rgb: Optional[str] = None
     is_trans: Optional[bool] = None
+
+class Review(SQLModel, table=True):
+    __tablename__ = "reviews"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    rental_id: int = Field(foreign_key="rentals.id", index=True)
+    reviewer_id: int = Field(foreign_key="users.id", index=True)
+    reviewee_id: int = Field(foreign_key="users.id", index=True)
+    lego_set_id: int = Field(foreign_key="lego_sets.id", index=True)
+
+    rating: int = Field(ge=1, le=5)
+    comment: Optional[str] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)

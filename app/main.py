@@ -1,10 +1,8 @@
 ﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.database import create_db_and_tables
-from app.routers import auth, sets, rentals
-from app.routers import proxy
-from app.routers import scan
-from app.routers import auth, sets, rentals, ai
+from app.routers import auth, sets, rentals, proxy, scan, ai, reviews
 
 
 app = FastAPI(title="LEGO Rental Backend")
@@ -27,6 +25,7 @@ app.include_router(rentals.router)
 app.include_router(proxy.router)
 app.include_router(scan.router)
 app.include_router(ai.router)
+app.include_router(reviews.router)
 
 @app.get("/health")
 def health_check():

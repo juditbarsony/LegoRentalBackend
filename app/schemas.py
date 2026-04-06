@@ -147,3 +147,20 @@ class MarkBatchRequest(BaseModel):
     elements: List[MarkBatchElement]
 
 
+class ReviewCreate(SQLModel):
+    rental_id: int
+    reviewee_id: int
+    lego_set_id: int
+    rating: int = Field(ge=1, le=5)
+    comment: Optional[str] = None
+
+
+class ReviewRead(SQLModel):
+    id: int
+    rental_id: int
+    reviewer_id: int
+    reviewee_id: int
+    lego_set_id: int
+    rating: int
+    comment: Optional[str] = None
+    created_at: datetime
