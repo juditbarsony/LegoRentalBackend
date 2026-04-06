@@ -8,6 +8,7 @@ from sqlalchemy import PrimaryKeyConstraint
 
 
 
+
 # --- USER MODELS ---
 
 class UserBase(SQLModel):
@@ -24,6 +25,16 @@ class User(UserBase, table=True):
     # az SQLModel tudni fogja, hogy ez egy lista a Relationship miatt
     lego_sets: List["LegoSet"] = Relationship(back_populates="owner")
     rentals: List["Rental"] = Relationship(back_populates="renter")
+
+    # --- USER FRIEND MODELS ---
+
+class UserFriend(SQLModel, table=True):
+    __tablename__ = "user_friends"
+
+    user_id: int = Field(foreign_key="users.id", primary_key=True)
+    friend_id: int = Field(foreign_key="users.id", primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 # --- LEGO MODELS ---
 
