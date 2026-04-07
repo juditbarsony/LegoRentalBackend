@@ -62,6 +62,7 @@ class LegoSetUpdate(SQLModel):
 class LegoSetRead(LegoSetBase):
     id: int
     owner_id: int
+    owner_name: str | None = None
     created_at: datetime
     number_of_items: Optional[int] = None
     img_url: Optional[str] = None

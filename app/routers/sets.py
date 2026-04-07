@@ -25,7 +25,7 @@ router = APIRouter(
 
 
 
-def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
+def build_lego_set_read(s: LegoSet, db: Session, owner_name: str | None = None) -> LegoSetRead:
     from app.models import RebrickableSet
     rb = db.exec(
         select(RebrickableSet).where(RebrickableSet.set_num == s.set_num)
@@ -34,6 +34,7 @@ def build_lego_set_read(s: LegoSet, db: Session) -> LegoSetRead:
     return LegoSetRead(
         id=s.id,
         owner_id=s.owner_id,
+        owner_name=owner_name,
         created_at=s.created_at,
         set_num=s.set_num,
         title=s.title,
@@ -110,7 +111,7 @@ def create_lego_set(
     db.refresh(db_lego_set)
 
     # 5) Visszaalakítás LegoSetRead-be
-    return build_lego_set_read(db_lego_set, db)
+    return build_lego_set_read(db_lego_set, dbowner_name=current_user.full_name)
 
     
 @router.post("/{set_id}/availabilities", response_model=AvailabilityRead)
@@ -193,7 +194,13 @@ def get_lego_set(
     if not lego_set:
         raise HTTPException(status_code=404, detail="Lego set not found.")
 
-    return build_lego_set_read(lego_set, db)
+    owner = db.get(User, lego_set.owner_id) if lego_set.owner_id else None
+
+    return build_lego_set_read(
+        lego_set,
+        db,
+        owner_name=owner.full_name if owner else None,
+    )
 
 @router.put("/{set_id}", response_model=LegoSetRead)
 def update_lego_set(
@@ -217,8 +224,13 @@ def update_lego_set(
     db.commit()
     db.refresh(lego_set)
 
-    # itt használd a már meglévő LegoSetRead-be csomagoló logikádat
-    return build_lego_set_read(lego_set, db)
+    owner = db.get(User, lego_set.owner_id) if lego_set.owner_id else None
+
+    return build_lego_set_read(
+        lego_set,
+        db,
+        owner_name=owner.full_name if owner else None,
+    )
     
 
 @router.delete("/{set_id}", status_code=status.HTTP_204_NO_CONTENT)
