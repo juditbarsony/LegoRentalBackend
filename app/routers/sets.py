@@ -102,6 +102,7 @@ def create_lego_set(
         notes=lego_set_in.notes,
         public=lego_set_in.public,
         owner_id=current_user.id,
+        dbowner_name=owner.full_name,   #gyanús
         number_of_items=number_of_items,
         missing_items_raw=missing_items_raw,
     )

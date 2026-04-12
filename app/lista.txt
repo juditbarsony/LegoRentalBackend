@@ -1,0 +1,26 @@
+ Volume in drive C has no label.
+ Volume Serial Number is 9EA7-8583
+
+ Directory of c:\Users\bj\source\repos\LegoRentalBackend\app
+
+11/04/2026  22:11    <DIR>          .
+11/04/2026  22:11    <DIR>          ..
+03/04/2026  21:17             5,928 ai_pipeline.py
+03/02/2026  21:51    <DIR>          api
+08/02/2026  20:14             1,465 auth.py
+03/04/2026  21:03             2,454 color_mapping.py
+25/03/2026  23:38               137 config.py
+03/04/2026  14:00    <DIR>          data
+08/02/2026  18:41               769 database.py
+09/02/2026  22:10               336 enums.py
+11/04/2026  22:11                 0 lista.txt
+06/04/2026  16:02             1,229 main.py
+01/04/2026  22:41    <DIR>          models
+06/04/2026  14:48             7,527 models.py
+07/04/2026  23:33    <DIR>          routers
+06/04/2026  22:48             4,152 schemas.py
+02/04/2026  22:52    <DIR>          training_data
+02/02/2026  22:44                 2 __init__.py
+06/04/2026  22:49    <DIR>          __pycache__
+              11 File(s)         23,999 bytes
+               8 Dir(s)  63,888,908,288 bytes free

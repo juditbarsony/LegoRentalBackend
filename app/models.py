@@ -203,6 +203,8 @@ class RbColor(SQLModel, table=True):
     rgb: Optional[str] = None
     is_trans: Optional[bool] = None
 
+ #----------REVIEW models-----------------
+
 class Review(SQLModel, table=True):
     __tablename__ = "reviews"
 
