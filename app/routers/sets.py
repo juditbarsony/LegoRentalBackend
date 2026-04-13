@@ -26,11 +26,44 @@ router = APIRouter(
 
 
 def build_lego_set_read(s: LegoSet, db: Session, owner_name: str | None = None) -> LegoSetRead:
-    from app.models import RebrickableSet
+    from app.models import RebrickableSet, ScanSession, ScanItem
+
     rb = db.exec(
         select(RebrickableSet).where(RebrickableSet.set_num == s.set_num)
     ).one_or_none()
-    print(f"DEBUG set_num={s.set_num}, rb={rb}, img_url={rb.img_url if rb else None}")
+
+    latest_scan = db.exec(
+        select(ScanSession)
+        .where(
+            ScanSession.lego_set_id == s.id,
+            ScanSession.status == "COMPLETE",
+        )
+        .order_by(ScanSession.finished_at.desc())
+    ).first()
+
+    last_scan_expected_count = None
+    last_scan_identified_count = None
+    last_scan_manually_confirmed_count = None
+    last_scan_missing_count = None
+    last_scan_finished_at = None
+
+    if latest_scan:
+        scan_items = db.exec(
+            select(ScanItem).where(ScanItem.session_id == latest_scan.id)
+        ).all()
+
+        last_scan_expected_count = len(scan_items)
+        last_scan_identified_count = sum(
+            1 for i in scan_items if i.status == "ai_identified"
+        )
+        last_scan_manually_confirmed_count = sum(
+            1 for i in scan_items if i.status == "manually_confirmed"
+        )
+        last_scan_missing_count = sum(
+            1 for i in scan_items if i.status == "missing"
+        )
+        last_scan_finished_at = latest_scan.finished_at
+
     return LegoSetRead(
         id=s.id,
         owner_id=s.owner_id,
@@ -50,6 +83,11 @@ def build_lego_set_read(s: LegoSet, db: Session, owner_name: str | None = None) 
             s.missing_items_raw.split(",") if s.missing_items_raw else None
         ),
         img_url=rb.img_url if rb else None,
+        last_scan_expected_count=last_scan_expected_count,
+        last_scan_identified_count=last_scan_identified_count,
+        last_scan_manually_confirmed_count=last_scan_manually_confirmed_count,
+        last_scan_missing_count=last_scan_missing_count,
+        last_scan_finished_at=last_scan_finished_at,
     )
 
 
@@ -102,7 +140,7 @@ def create_lego_set(
         notes=lego_set_in.notes,
         public=lego_set_in.public,
         owner_id=current_user.id,
-        dbowner_name=owner.full_name,   #gyanús
+      #  owner_name=current_user.full_name,   #gyanús
         number_of_items=number_of_items,
         missing_items_raw=missing_items_raw,
     )
@@ -112,7 +150,7 @@ def create_lego_set(
     db.refresh(db_lego_set)
 
     # 5) Visszaalakítás LegoSetRead-be
-    return build_lego_set_read(db_lego_set, dbowner_name=current_user.full_name)
+    return build_lego_set_read(db_lego_set,db, owner_name=current_user.full_name)
 
     
 @router.post("/{set_id}/availabilities", response_model=AvailabilityRead)
@@ -344,33 +382,36 @@ def list_lego_sets(
         ).all()
         rb_map = {rb.set_num: rb.img_url for rb in rb_results}
     
+        response: List[LegoSetRead] = []
+        for s in results:
+            response.append(build_lego_set_read(s, db))
+
+        return response
+
+@router.get("/my", response_model=List[LegoSetRead])
+def list_my_lego_sets(
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    stmt = (
+        select(LegoSet)
+        .where(LegoSet.owner_id == current_user.id)
+        .order_by(LegoSet.created_at.desc())
+    )
+
+    results = db.exec(stmt).all()
+
     response: List[LegoSetRead] = []
     for s in results:
         response.append(
-            LegoSetRead(
-                id=s.id,
-                owner_id=s.owner_id,
-                created_at=s.created_at,
-                set_num=s.set_num,
-                title=s.title,
-                location=s.location,
-                rental_price=s.rental_price,
-                deposit=s.deposit,
-                scan_required=s.scan_required,
-                state=s.state,
-                notes=s.notes,
-                public=s.public,
-                number_of_items=s.number_of_items,
-                missing_items=(
-                    s.missing_items_raw.split(",") if s.missing_items_raw else None
-                ),
-                img_url=rb_map.get(s.set_num),
+            build_lego_set_read(
+                s,
+                db,
+                owner_name=current_user.full_name,
             )
         )
-   
+
     return response
-
-
 
 @router.get("/{set_id}/parts")
 async def get_set_parts(

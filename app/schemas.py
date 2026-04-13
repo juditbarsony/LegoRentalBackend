@@ -5,7 +5,8 @@ from datetime import date, datetime
 from sqlmodel import SQLModel, Field
 from app.enums import LegoSetState
 from app.enums import RentalStatus
-
+from datetime import date, datetime
+from pydantic import BaseModel
 
 
 # We can inherit from UserBase to avoid duplication
@@ -66,6 +67,12 @@ class LegoSetRead(LegoSetBase):
     created_at: datetime
     number_of_items: Optional[int] = None
     img_url: Optional[str] = None
+
+    last_scan_expected_count: Optional[int] = None
+    last_scan_identified_count: Optional[int] = None
+    last_scan_manually_confirmed_count: Optional[int] = None
+    last_scan_missing_count: Optional[int] = None
+    last_scan_finished_at: Optional[datetime] = None
     
 class AvailabilityBase(SQLModel):
     start_date: date
@@ -119,9 +126,16 @@ class ScanSessionRead(BaseModel):
     id: int
     rental_id: int
     lego_set_id: int
+    scanned_by: Optional[int] = None 
     scanned_at: datetime
+    finished_at: Optional[datetime] = None
     status: str
     items: List[ScanItemRead] = []
+        # Kalkulált – a router tölti fel, nem ORM mező:
+    expected_count: int = 0
+    identified_count: int = 0
+    manually_confirmed_count: int = 0
+    missing_count: int = 0
 
     class Config:
         from_attributes = True
@@ -165,3 +179,21 @@ class ReviewRead(SQLModel):
     rating: int
     comment: Optional[str] = None
     created_at: datetime
+    
+
+
+class RentalListItemRead(BaseModel):
+    id: int
+    lego_set_id: int
+    renter_id: int
+
+    set_title: str
+    owner_id: int
+    owner_name: str
+
+    start_date: date
+    end_date: date
+    total_price: float
+    status: str
+    created_at: datetime
+    updated_at: datetime

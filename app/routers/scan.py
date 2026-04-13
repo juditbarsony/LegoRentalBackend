@@ -16,6 +16,7 @@ from app.models import (
 from app.schemas import (
     ScanSessionCreate,
     ScanSessionRead,
+    ScanItemRead,
     ScanIdentifyResult,
     ScanIdentifyResponse,
     MarkBatchRequest,
@@ -38,6 +39,33 @@ def _get_session_or_403(session_id: int, db: Session, current_user: User) -> Sca
     if not rental or rental.renter_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your session.")
     return scan_session
+
+
+def _build_scan_session_read(scan_session: ScanSession, db: Session) -> ScanSessionRead:
+    items = db.exec(
+        select(ScanItem).where(ScanItem.session_id == scan_session.id)
+    ).all()
+
+    return ScanSessionRead(
+        id=scan_session.id,
+        rental_id=scan_session.rental_id,
+        lego_set_id=scan_session.lego_set_id,
+        scanned_by=scan_session.scanned_by,
+        scanned_at=scan_session.scanned_at,
+        finished_at=scan_session.finished_at,
+        status=scan_session.status,
+        items=[ScanItemRead.model_validate(i) for i in items],
+        expected_count=len(items),
+        identified_count=sum(1 for i in items if i.status == "ai_identified"),
+        manually_confirmed_count=sum(1 for i in items if i.status == "manually_confirmed"),
+        missing_count=sum(1 for i in items if i.status == "missing"),
+    )
+
+
+def _build_scan_session_read_list(
+    sessions: List[ScanSession], db: Session
+) -> List[ScanSessionRead]:
+    return [_build_scan_session_read(s, db) for s in sessions]
 
 
 @router.post("/identify", response_model=ScanIdentifyResponse)
@@ -89,7 +117,7 @@ async def identify_part(
 
 
 @router.post("/session", response_model=ScanSessionRead)
-async def create_scan_session(
+def create_scan_session(
     data: ScanSessionCreate,
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -110,7 +138,7 @@ async def create_scan_session(
     ).first()
 
     if existing_incomplete:
-        return existing_incomplete
+        return _build_scan_session_read(existing_incomplete, db)
 
     lego_set = db.get(LegoSet, data.lego_set_id)
     if not lego_set:
@@ -184,7 +212,8 @@ async def create_scan_session(
     db.add_all(items)
     db.commit()
     db.refresh(scan_session)
-    return scan_session
+
+    return _build_scan_session_read(scan_session, db)
 
 
 @router.get("/session/{session_id}", response_model=ScanSessionRead)
@@ -193,7 +222,8 @@ def get_scan_session(
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    return _get_session_or_403(session_id, db, current_user)
+    scan_session = _get_session_or_403(session_id, db, current_user)
+    return _build_scan_session_read(scan_session, db)
 
 
 @router.get("/rental/{rental_id}", response_model=List[ScanSessionRead])
@@ -213,7 +243,8 @@ def get_sessions_for_rental(
         .where(ScanSession.rental_id == rental_id)
         .order_by(ScanSession.id.desc())
     )
-    return db.exec(stmt).all()
+    sessions = db.exec(stmt).all()
+    return _build_scan_session_read_list(sessions, db)
 
 
 @router.get("/rental/{rental_id}/active-session", response_model=ScanSessionRead)
@@ -240,7 +271,7 @@ def get_active_session_for_rental(
     if not active_session:
         raise HTTPException(status_code=404, detail="No active session for this rental.")
 
-    return active_session
+    return _build_scan_session_read(active_session, db)
 
 
 @router.patch("/session/{session_id}/item/{part_num}", response_model=ScanSessionRead)
@@ -292,7 +323,7 @@ def mark_item_identified(
 
     db.commit()
     db.refresh(scan_session)
-    return scan_session
+    return _build_scan_session_read(scan_session, db)
 
 
 @router.patch("/session/{session_id}/item/{item_id}/confirm", response_model=ScanSessionRead)
@@ -339,7 +370,7 @@ def manual_confirm_item(
 
     db.commit()
     db.refresh(scan_session)
-    return scan_session
+    return _build_scan_session_read(scan_session, db)
 
 
 @router.patch("/session/{session_id}/mark-batch", response_model=ScanSessionRead)
@@ -396,7 +427,7 @@ def mark_batch(
 
     db.commit()
     db.refresh(scan_session)
-    return scan_session
+    return _build_scan_session_read(scan_session, db)
 
 
 @router.patch("/session/{session_id}/reset", response_model=ScanSessionRead)
@@ -426,23 +457,45 @@ def reset_scan_session(
 
     db.commit()
     db.refresh(scan_session)
-    return scan_session
+    return _build_scan_session_read(scan_session, db)
 
 
 @router.patch("/session/{session_id}/finish", response_model=ScanSessionRead)
-def finish_scan_session(
+def finish_session(
     session_id: int,
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    scan_session = _get_session_or_403(session_id, db, current_user)
+    db_session = db.get(ScanSession, session_id)
+    if not db_session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if db_session.status == "COMPLETE":
+        raise HTTPException(status_code=400, detail="Session already complete")
 
-    if scan_session.status == "COMPLETE":
-        raise HTTPException(status_code=400, detail="Session already complete.")
+    rental = db.get(Rental, db_session.rental_id)
+    if not rental or rental.renter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your session.")
 
-    scan_session.status = "COMPLETE"
-    db.add(scan_session)
-
+    db_session.status = "COMPLETE"
+    db_session.finished_at = datetime.now(UTC)
+    db_session.scanned_by = current_user.id
+    db.add(db_session)
     db.commit()
-    db.refresh(scan_session)
-    return scan_session
+    db.refresh(db_session)
+
+    return _build_scan_session_read(db_session, db)
+
+
+@router.get("/my-reports", response_model=List[ScanSessionRead])
+def get_my_reports(
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    sessions = db.exec(
+        select(ScanSession)
+        .where(ScanSession.scanned_by == current_user.id)
+        .where(ScanSession.status == "COMPLETE")
+        .order_by(ScanSession.finished_at.desc())
+    ).all()
+
+    return _build_scan_session_read_list(sessions, db)

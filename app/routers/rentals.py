@@ -8,6 +8,7 @@ from app.models import Rental, LegoSet, Availability, User
 from app.schemas import RentalCreate, RentalRead
 from app.routers.auth import get_current_user
 from app.enums import RentalStatus
+from app.schemas import RentalListItemRead
 
 router = APIRouter(
     prefix="/rentals",
@@ -294,7 +295,8 @@ def cancel_rental(
 # app/routers/rentals.py
 # ... (korábbi importok és POST /rentals, PATCH endpointok)
 
-@router.get("/", response_model=List[RentalRead])
+
+@router.get("/", response_model=list[RentalListItemRead])
 def list_rentals(
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -302,49 +304,40 @@ def list_rentals(
     as_renter: bool | None = None,
     as_owner: bool | None = None,
 ):
-    """
-    Listázza a current user rental-jait:
-    - as_renter=True: ahol ő a bérlő
-    - as_owner=True: ahol ő a set tulajdonosa
-    - ha egyik sincs megadva: mindkettő (saját bérlései + saját setjeinek bérlései)
-    - status_filter: opcionális szűrés státusz szerint
-    """
-    stmt = select(Rental)
+    stmt = select(Rental).join(LegoSet, Rental.lego_set_id == LegoSet.id)
 
-    # Jogosultság: user látja, ahol renter vagy owner
     if as_renter and not as_owner:
         stmt = stmt.where(Rental.renter_id == current_user.id)
     elif as_owner and not as_renter:
-        stmt = stmt.join(LegoSet).where(LegoSet.owner_id == current_user.id)
+        stmt = stmt.where(LegoSet.owner_id == current_user.id)
     else:
-        # mindkettő: renter VAGY owner
-        stmt = stmt.outerjoin(LegoSet).where(
-            (Rental.renter_id == current_user.id) | (LegoSet.owner_id == current_user.id)
+        stmt = stmt.where(
+            (Rental.renter_id == current_user.id) |
+            (LegoSet.owner_id == current_user.id)
         )
 
-    # Státusz szűrés
     if status_filter:
         stmt = stmt.where(Rental.status == status_filter)
 
     rentals = db.exec(stmt).all()
 
-    response: List[RentalRead] = []
-    for r in rentals:
-        response.append(
-            RentalRead(
-                id=r.id,
-                lego_set_id=r.lego_set_id,
-                renter_id=r.renter_id,
-                start_date=r.start_date,
-                end_date=r.end_date,
-                total_price=r.total_price,
-                status=r.status,
-                created_at=r.created_at,
-                updated_at=r.updated_at,
-            )
+    return [
+        RentalListItemRead(
+            id=r.id,
+            lego_set_id=r.lego_set_id,
+            renter_id=r.renter_id,
+            set_title=r.lego_set.title,
+            owner_id=r.lego_set.owner_id,
+            owner_name=r.lego_set.owner.full_name if r.lego_set.owner else "Unknown owner",
+            start_date=r.start_date,
+            end_date=r.end_date,
+            total_price=r.total_price,
+            status=r.status,
+            created_at=r.created_at,
+            updated_at=r.updated_at,
         )
-    return response
-
+        for r in rentals
+    ]
 
 @router.get("/{rental_id}", response_model=RentalRead)
 def get_rental(

@@ -108,6 +108,9 @@ class Rental(SQLModel, table=True):
 
     lego_set: Optional["LegoSet"] = Relationship(back_populates="rentals")
     renter: Optional["User"] = Relationship(back_populates="rentals")
+    
+
+
 
 # --- REBRICKABLE MODELS ---
 
@@ -145,7 +148,9 @@ class ScanSession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     rental_id: int = Field(foreign_key="rentals.id", index=True)
     lego_set_id: int = Field(foreign_key="lego_sets.id", index=True)
+    scanned_by: Optional[int] = Field(default=None, foreign_key="users.id")
     scanned_at: datetime = Field(default_factory=datetime.utcnow)
+    finished_at: Optional[datetime] = Field(default=None)
     status: str = Field(default="INCOMPLETE")  # COMPLETE / INCOMPLETE
     items: List["ScanItem"] = Relationship(back_populates="session")
 
