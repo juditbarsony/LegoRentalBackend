@@ -91,6 +91,31 @@ def build_lego_set_read(s: LegoSet, db: Session, owner_name: str | None = None) 
     )
 
 
+@router.get("/my", response_model=List[LegoSetRead])
+def list_my_lego_sets(
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    stmt = (
+        select(LegoSet)
+        .where(LegoSet.owner_id == current_user.id)
+        .order_by(LegoSet.created_at.desc())
+    )
+
+    results = db.exec(stmt).all()
+
+    response: List[LegoSetRead] = []
+    for s in results:
+        response.append(
+            build_lego_set_read(
+                s,
+                db,
+                owner_name=current_user.full_name,
+            )
+        )
+
+    return response
+
 @router.post("/", response_model=LegoSetRead, status_code=status.HTTP_201_CREATED)
 def create_lego_set(
     lego_set_in: LegoSetCreate,
@@ -388,30 +413,7 @@ def list_lego_sets(
 
         return response
 
-@router.get("/my", response_model=List[LegoSetRead])
-def list_my_lego_sets(
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    stmt = (
-        select(LegoSet)
-        .where(LegoSet.owner_id == current_user.id)
-        .order_by(LegoSet.created_at.desc())
-    )
 
-    results = db.exec(stmt).all()
-
-    response: List[LegoSetRead] = []
-    for s in results:
-        response.append(
-            build_lego_set_read(
-                s,
-                db,
-                owner_name=current_user.full_name,
-            )
-        )
-
-    return response
 
 @router.get("/{set_id}/parts")
 async def get_set_parts(

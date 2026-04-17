@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlmodel import Session, select
 from typing import List, Optional
 from sqlalchemy import text
+from app.routers.identify_dispatcher import identify_elements_dispatch
+
 
 from app.database import get_session
 from app.models import (
@@ -29,6 +31,9 @@ from app.color_mapping import (
 )
 
 router = APIRouter(prefix="/scan", tags=["scan"])
+IDENTIFIED_STATUSES = ("ai_identified", "brickognize_identified", "manually_confirmed")
+AUTO_IDENTIFIED_STATUSES = ("ai_identified", "brickognize_identified")
+print("***** LOADED scan.py FROM THIS FILE *****", flush=True)
 
 
 def _get_session_or_403(session_id: int, db: Session, current_user: User) -> ScanSession:
@@ -56,11 +61,18 @@ def _build_scan_session_read(scan_session: ScanSession, db: Session) -> ScanSess
         status=scan_session.status,
         items=[ScanItemRead.model_validate(i) for i in items],
         expected_count=len(items),
-        identified_count=sum(1 for i in items if i.status == "ai_identified"),
-        manually_confirmed_count=sum(1 for i in items if i.status == "manually_confirmed"),
-        missing_count=sum(1 for i in items if i.status == "missing"),
+        identified_count=len([
+            i for i in items
+            if i.status in IDENTIFIED_STATUSES
+        ]),
+        missing_count=len([
+            i for i in items
+            if i.status == "missing"
+        ]),
+        manually_confirmed_count=sum(
+            1 for i in items if i.status == "manually_confirmed"
+        )
     )
-
 
 def _build_scan_session_read_list(
     sessions: List[ScanSession], db: Session
@@ -69,6 +81,7 @@ def _build_scan_session_read_list(
 
 
 @router.post("/identify", response_model=ScanIdentifyResponse)
+
 async def identify_part(
     session_id: int = Query(...),
     file: UploadFile = File(...),
@@ -76,7 +89,7 @@ async def identify_part(
     current_user: User = Depends(get_current_user),
 ):
     scan_session = _get_session_or_403(session_id, db, current_user)
-
+    print("DEBUG /scan/identify reached")
     if scan_session.status == "COMPLETE":
         raise HTTPException(status_code=400, detail="Session already complete.")
 
@@ -95,7 +108,19 @@ async def identify_part(
         if color:
             session_parts[pn].add(color)
 
-    result = await identify_element(file, session_parts=session_parts)
+    lego_set = db.get(LegoSet, scan_session.lego_set_id)
+    if not lego_set:
+        raise HTTPException(status_code=404, detail="Lego set not found.")
+
+    if not lego_set.set_num:
+        raise HTTPException(status_code=400, detail="Lego set has no set_num.")
+
+    result = await identify_elements_dispatch(
+        file=file,
+        set_num=lego_set.set_num,
+        session_parts=session_parts,
+    )
+
 
     if "error" in result:
         raise HTTPException(status_code=422, detail=result["error"])
@@ -105,14 +130,15 @@ async def identify_part(
 
     elements = [
         ScanIdentifyResult(
-            part_num=e["elem_id"],
-            color_name=e.get("color"),
-            confidence=round(e["confidence"] / 100, 4),
-            detection_confidence=round(e["detection_confidence"] / 100, 4),
+            part_num=e.get("elem_id") or e.get("part_num"),
+            color_name=e.get("color") or e.get("color_name"),
+            confidence=round(e["confidence"], 4),
+            detection_confidence=round(e["detection_confidence"], 4),
             bounding_box=e["bounding_box"],
         )
         for e in result["elements"]
     ]
+
     return ScanIdentifyResponse(count=len(elements), elements=elements)
 
 

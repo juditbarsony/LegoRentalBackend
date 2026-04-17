@@ -39,6 +39,39 @@ DATASET_DIR = BASE_DIR / "training_data" / "10696_training_data_balanced_FINAL"
 CLASS_NAMES = sorted(os.listdir(DATASET_DIR))
 
 # ==========================================
+# Alakfelismerés YOLO
+# ==========================================
+
+def detect_elements(img_bgr, min_conf: float = 0.50) -> list[dict]:
+    results = yolo_model(img_bgr, verbose=False)
+    boxes = results[0].boxes
+
+    if boxes is None or len(boxes) == 0:
+        return []
+
+    detections = []
+
+    for box in boxes:
+        detection_confidence = float(box.conf[0])
+        if detection_confidence < min_conf:
+            continue
+
+        x1, y1, x2, y2 = map(float, box.xyxy[0].tolist())
+
+        detections.append({
+            "x1": int(x1),
+            "y1": int(y1),
+            "x2": int(x2),
+            "y2": int(y2),
+            "detection_confidence": round(detection_confidence, 4),
+        })
+
+    return detections
+
+
+
+
+# ==========================================
 # SZÍNFELISMERÉS (k-NN, ROI alapú)
 # ==========================================
 def get_color_features(img_bgr: np.ndarray) -> np.ndarray:
@@ -107,41 +140,38 @@ def filter_by_set_colors(top5: list, detected_color: str | None, color_map: dict
 # ==========================================
 # TELJES PIPELINE
 # ==========================================
-async def identify_element(file, session_parts: dict = None) -> dict:
-    contents = await file.read()
-    np_arr = np.frombuffer(contents, np.uint8)
+async def identify_element(
+    file_bytes: bytes,
+    session_parts: dict = None,
+    filename: str | None = None,
+    content_type: str | None = None,
+) -> dict:
+    np_arr = np.frombuffer(file_bytes, np.uint8)
     img_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
     if img_bgr is None:
         return {"error": "Failed to decode image."}
 
-    # YOLO detection
     results = yolo_model(img_bgr, verbose=False)
     boxes = results[0].boxes
-
-    # identify_element()-ben, a YOLO detekció után:
-    for box in boxes:
-        conf = float(box.conf[0])
-        coords = box.xyxy[0].tolist()
-        print(f"YOLO detektált: conf={conf:.2f}, coords={coords}")
-
-
 
     if boxes is None or len(boxes) == 0:
         return {"error": "No LEGO element detected in image."}
 
-    # ← MINDEN elemet feldolgozunk
     identified_elements = []
 
     for box in boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         detection_confidence = float(box.conf[0])
 
+        if detection_confidence < 0.50:
+            continue
+
         crop = img_bgr[y1:y2, x1:x2]
         if crop.size == 0:
             continue
 
-        top5  = predict_shape(crop)
+        top5 = predict_shape(crop)
         model_color = predict_color(crop)
         mapped_color = model_color_to_rebrickable_name(model_color)
 
@@ -149,23 +179,22 @@ async def identify_element(file, session_parts: dict = None) -> dict:
             top5,
             model_color,
             color_map=session_parts if session_parts else SET_COLOR_MAP
-)
-        
-        if detection_confidence < 0.50:  # 50% alatti YOLO detekciók kiszűrése
+        )
+
+        if not top5_filtered:
             continue
 
         identified_elements.append({
             "elem_id": top5_filtered[0]["elem_id"],
             "color": mapped_color,
-            "color_model_output": model_color,
-            "confidence": top5_filtered[0]["confidence"],
-            "detection_confidence": round(detection_confidence * 100, 2),
+            "confidence": round(float(top5_filtered[0]["confidence"]) / 100.0, 4),
+            "detection_confidence": round(float(detection_confidence), 4),
+            "bounding_box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
             "top5_raw": top5,
             "top5_filtered": top5_filtered,
-            "bounding_box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
         })
 
     return {
         "count": len(identified_elements),
-        "elements": identified_elements
+        "elements": identified_elements,
     }

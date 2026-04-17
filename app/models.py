@@ -158,16 +158,21 @@ class ScanSession(SQLModel, table=True):
 
 class ScanItem(SQLModel, table=True):
     __tablename__ = "scan_items"
-    id: Optional[int] = Field(default=None, primary_key=True)  # ← EZ HIÁNYZIK
+
+    id: Optional[int] = Field(default=None, primary_key=True)
     session_id: int = Field(foreign_key="scan_sessions.id", index=True)
     part_num: str
     name: Optional[str] = Field(default=None)
     color: Optional[str] = Field(default=None)
     img_url: Optional[str] = Field(default=None)
-    status: str = Field(default="missing")  # "ai_identified" | "manually_confirmed" | "missing"
+
+    # "missing" | "ai_identified" | "brickognize_identified" | "manually_confirmed"
+    status: str = Field(default="missing")
+
     confirmed_by: Optional[int] = Field(default=None, foreign_key="users.id")
     confirmed_at: Optional[datetime] = Field(default=None)
     confidence: Optional[float] = Field(default=None)
+
     session: Optional["ScanSession"] = Relationship(back_populates="items")
 
 

@@ -110,13 +110,14 @@ class ScanItemRead(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
     img_url: Optional[str] = None
-    status: str  # "ai_identified" | "manually_confirmed" | "missing"
+    status: str  # "missing" | "ai_identified" | "brickognize_identified" | "manually_confirmed"
     confirmed_by: Optional[int] = None
     confirmed_at: Optional[datetime] = None
     confidence: Optional[float] = None
 
     class Config:
         from_attributes = True
+
 
 class ScanSessionCreate(BaseModel):
     rental_id: int
@@ -147,6 +148,7 @@ class ScanIdentifyResult(BaseModel):
     detection_confidence: float        # YOLO box confidence
     bounding_box: dict                 # x1, y1, x2, y2
 
+    
 class ScanIdentifyResponse(BaseModel):
     count: int
     elements: List[ScanIdentifyResult]  # ← lista, nem egy elem
